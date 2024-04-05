@@ -11,3 +11,6 @@ Test how an nginx ingress controller deals with ingresses having duplicate host 
 * How does the nginx ingress controller work with similar ingress configurations
 * Configure an nginx ingress to set the `X-FORWARDE-FOR` header
 
+## Deployment
+### Test
+`helm template --debug -f ingress-test/test-values.yaml ingress-test ingress-test/`
