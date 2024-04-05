@@ -1,0 +1,9 @@
+apiVersion: v2
+name: ingress-test
+description: A Helm chart for testing the nginx ingress controller
+
+type: application
+
+version: 0.1.0
+
+appVersion: "1.16.0"
