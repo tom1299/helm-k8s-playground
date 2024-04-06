@@ -1,0 +1,8 @@
+{{- $parms := dict "namespace" .Release.Namespace "prefix" "lookup-test-" -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "lookup-test.fullname" . }}
+data:
+    myvalue: "Hello World"
+    lookupValue: '{{ include "lookup-test.getConfigMapName" $parms }}'
