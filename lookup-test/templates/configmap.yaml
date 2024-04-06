@@ -1,4 +1,4 @@
-{{- $parms := dict "namespace" "test" "prefix" "lookup-test" -}}
+{{- $parms := dict "namespace" .Release.Namespace "prefix" "lookup-test" -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
