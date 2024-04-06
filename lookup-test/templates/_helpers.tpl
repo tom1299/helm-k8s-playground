@@ -61,19 +61,17 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
-{{/* Get the exact name of a configmap starting with a specific prefix */}}
 {{- define  "lookup-test.getConfigMapName" -}}
 {{- $prefix := printf "%s-" .prefix -}}
 {{- $namespace := .namespace -}}
 {{- $configmapName := "" -}}
-{{ range $index, $configmap := (lookup "v1" "ConfigMap" $namespace "").items }}
-    # Get the name of the configmap
-    {{- if hasPrefix $configmap.metadata.name $prefix }}
-        {{- $configmapName = $configmap.metadata.name }}
+{{ range $index, $configmap := (lookup "v1" "ConfigMap" $namespace "").items -}}
+    {{- if hasPrefix $prefix $configmap.metadata.name -}}
+        {{- $configmapName = $configmap.metadata.name -}}
         {{- break -}}
-    {{- end }}
-{{ end }}
+    {{- end -}}
+{{ end -}}
 {{- $configmapName -}}
-{{- end }}
+{{- end -}}
 
 
