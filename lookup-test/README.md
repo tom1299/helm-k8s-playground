@@ -1,6 +1,6 @@
 ## Commands
 ```shell
-$ kubectl apply -n test -f static-content/configmap.yaml
+$ kubectl apply -n test -f kustomize/configmap.yaml
 $ helm upgrade -n test lookup-test .
 $ kubectl get configmaps -n test lookup-test -o yaml
 $ kubectl get configmaps -n test lookup-test -o yaml

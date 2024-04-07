@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: lookup-test-123456
-data:
-  test1: "test1Value"

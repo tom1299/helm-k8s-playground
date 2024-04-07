@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: test
+
+generatorOptions:
+  labels:
+    app.kubernetes.io/managed-by: kustomize.configMapGenerator
+
+configMapGenerator:
+- name: spring-jpa-config
+  files:
+    - spring-jpa-config.properties
+
+secretGenerator:
+  - name: spring-jpa-secret
+    files:
+      - spring-jpa-secret.properties
