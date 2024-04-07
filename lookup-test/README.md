@@ -1,23 +1,23 @@
 ## Commands
 ```shell
-$ kubectl apply -n test -f kustomize/configmap.yaml
+$ kubectl apply -k ./lookup-test/kustomize/
 $ helm upgrade -n test lookup-test .
-$ kubectl get configmaps -n test lookup-test -o yaml
-$ kubectl get configmaps -n test lookup-test -o yaml
+$ helm upgrade -n test lookup-test ./lookup-test/
+$ $ kubectl get configmaps -n test lookup-test -o yaml
 apiVersion: v1
 data:
-  lookupValue: lookup-test-123456
-  myvalue: Hello World
+  spring-jpa-configmap-name: spring-jpa-config-df9d9mfhfb
+  spring-jpa-secret-name: spring-jpa-secret-5259dtkthk
 kind: ConfigMap
 metadata:
   annotations:
     meta.helm.sh/release-name: lookup-test
     meta.helm.sh/release-namespace: test
-  creationTimestamp: "2024-04-06T05:47:25Z"
+  creationTimestamp: "2024-04-07T05:50:25Z"
   labels:
     app.kubernetes.io/managed-by: Helm
   name: lookup-test
   namespace: test
-  resourceVersion: "7155"
-  uid: 4eababa8-234e-4f62-b0b0-dc8de296ddcc
+  resourceVersion: "8814"
+  uid: cc707148-5c7c-40df-baf4-5afe66276fbc
 ```
