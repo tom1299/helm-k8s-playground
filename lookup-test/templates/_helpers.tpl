@@ -61,11 +61,19 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
-{{- define  "lookup-test.getConfigMapName" -}}
+{{- define  "lookup-test.getObjectName" -}}
+{{- $kind := "ConfigMap" -}}
+{{- if .kind -}}
+{{- $kind = .kind -}}
+{{- end -}}
+{{- $apiVersion := "v1" -}}
+{{- if .apiVersion -}}
+{{- $apiVersion := .apiVersion -}}
+{{- end -}}
 {{- $prefix := printf "%s-" .prefix -}}
 {{- $namespace := .namespace -}}
 {{- $configmapName := "" -}}
-{{ range $index, $configmap := (lookup "v1" "ConfigMap" $namespace "").items -}}
+{{ range $index, $configmap := (lookup $apiVersion $kind $namespace "").items -}}
     {{- if hasPrefix $prefix $configmap.metadata.name -}}
         {{- $configmapName = $configmap.metadata.name -}}
         {{- break -}}

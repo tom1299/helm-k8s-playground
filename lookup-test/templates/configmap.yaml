@@ -4,6 +4,6 @@ metadata:
   name: {{ include "lookup-test.fullname" . }}
 data:
     {{ $parms := dict "namespace" .Release.Namespace "prefix" "spring-jpa-config" -}}
-    spring-jpa-configmap-name: "{{ include "lookup-test.getConfigMapName" $parms -}}"
-    {{ $parms = dict "namespace" .Release.Namespace "prefix" "spring-jpa-secret" -}}
-    spring-jpa-secret-name: "{{ include "lookup-test.getConfigMapName" $parms -}}"
+    spring-jpa-configmap-name: "{{ include "lookup-test.getObjectName" $parms -}}"
+    {{ $parms = dict "kind" "Secret" "namespace" .Release.Namespace "prefix" "spring-jpa-secret" -}}
+    spring-jpa-secret-name: "{{ include "lookup-test.getObjectName" $parms -}}"
