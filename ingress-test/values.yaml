@@ -60,11 +60,21 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
   hosts:
-    - host: nginx-ingress-local
+    - host: ingress-test-1.example.com
       paths:
-        - path: /
+        - path: /ingress-test
           pathType: ImplementationSpecific
-  tls: []
+          serviceName: ingress-test-0
+    - host: ingress-test-2.example.com
+      paths:
+        - path: /ingress-test-2
+          pathType: ImplementationSpecific
+          serviceName: ingress-test-1
+  tls:
+    - secretName: ingress-test
+      hosts:
+        - ingress-test-1.example.com
+        - ingress-test-2.example.com
 
 resources:
    limits:
