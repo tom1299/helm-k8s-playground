@@ -17,5 +17,20 @@ spec:
             name: ingress-test
             port:
               number: 8080
-        path: /
+        path: /ingress-test
         pathType: Prefix
+  - host: ingress-test-2.example.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: ingress-test
+            port:
+              number: 8080
+        path: /ingress-test-2
+        pathType: Prefix
+  tls:
+  - hosts:
+    - ingress-test-1.example.com
+    - ingress-test-2.example.com
+    secretName: ingress-test-tls-certificate
