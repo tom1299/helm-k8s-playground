@@ -1,11 +1,14 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "ingress-test.fullname" . }}
   labels:
     {{- include "ingress-test.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  serviceName: {{ include "ingress-test.fullname" . }}
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       {{- include "ingress-test.selectorLabels" . | nindent 6 }}
