@@ -1,0 +1,43 @@
+{{- range $key, $value := .Values.tlsTermination }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $key }}
+spec:
+  ports:
+  - protocol: TCP
+    port: {{ $value.targetPort }}
+  clusterIP: None
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ $key }}
+subsets:
+- addresses:
+  - ip: {{ $value.targetIP }}
+  ports:
+  - port: {{ $value.targetPort }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $key }}
+spec:
+  tls:
+  - hosts:
+    - {{ $value.domain }}
+    secretName: {{ if $value.secret }}{{ $value.secret }}{{ else }}{{ printf "%s-secret" $key }}{{ end }}
+  rules:
+  - host: {{ $value.domain }}
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: {{ $key }}
+            port:
+              number: {{ $value.targetPort }}
+{{- end }}

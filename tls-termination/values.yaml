@@ -1,0 +1,10 @@
+tlsTermination:
+  foo-domain:
+    domain: foo.test.example.com
+    targetIP: 10.10.10.1
+    targetPort: 9000
+    secret: foo-secret
+  bar-domain:
+    domain: bar.test.example.com
+    targetIP: 10.10.10.2
+    targetPort: 9001
