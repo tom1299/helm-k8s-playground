@@ -8,7 +8,19 @@ tlsTermination:
     secret: foo-secret
   bar-domain:
     domain: bar.test.example.com
-    targetIPs:
-    - 10.10.10.2
-    - 10.10.10.2
-    targetPort: 9001
+    paths:
+      - path: /
+        targetIPs:
+        - 10.10.10.2
+        - 10.10.10.2
+        targetPort: 9001
+      - path: /api
+        targetIPs:
+        - 10.10.10.2
+        - 10.10.10.2
+        targetPort: 9002
+      - path: /foo
+        targetIPs:
+        - 10.10.10.6
+        - 10.10.10.7
+        targetPort: 9003

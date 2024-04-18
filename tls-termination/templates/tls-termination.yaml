@@ -15,36 +15,40 @@ spec:
   - host: {{ $value.domain }}
     http:
       paths:
+      {{- range $i, $path := $value.paths }}
       - pathType: Prefix
-        path: "/"
+        path: "{{ $path.path }}"
         backend:
           service:
-            name: {{ $node }}
+            name: {{ printf "%s-%d" $node $i }}
             port:
-              number: {{ $value.port }}
+              number: {{ $path.targetPort }}
+      {{- end }}
+{{- range $i, $path := $value.paths }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $node }}
+  name: {{ printf "%s-%d" $node $i }}
   labels:
     {{- include "tls-termination.labels" $ | nindent 4 }}
 spec:
   ports:
-  - port: {{ $value.port }}
+  - port: {{ $path.targetPort }}
   clusterIP: None
 ---
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: {{ $node }}
+  name: {{ printf "%s-%d" $node $i }}
   labels:
     {{- include "tls-termination.labels" $ | nindent 4 }}
 subsets:
 - addresses:
-  {{- range $value.targetIPs }}
+  {{- range $path.targetIPs }}
   - ip: {{ . }}
   {{- end }}
   ports:
-  - port: {{ $value.port }}
+  - port: {{ $path.targetPort }}
+{{- end }}
 {{- end }}
