@@ -23,7 +23,7 @@ spec:
   serviceName: "nginx"
   replicas: 3 # by default is 1
   minReadySeconds: 10 # by default is 0
-  podManagementPolicy: Parallel
+  podManagementPolicy: Parallel # OrderedReady can prevent the stateful set to rollback into a working state
   template:
     metadata:
       labels:
@@ -36,6 +36,3 @@ spec:
         ports:
         - containerPort: 80
           name: web
-        env:
-          - name: TEST_VAR
-            value: "test"
