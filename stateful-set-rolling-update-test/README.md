@@ -9,3 +9,5 @@ https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-ro
 Can be solved by setting the podManagementPolicy to Parallel:
 
 https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#parallel-pod-management
+
+Drawback: It might be that no pods are available after a faulty update.
