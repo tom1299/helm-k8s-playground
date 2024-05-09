@@ -24,7 +24,8 @@ spec:
               service:
                 name: {{ default (include "ingress-test.fullname" $root) .serviceName }}
                 port:
-                  number: {{ $svcPort }}
+                  {{- $targetPort := .targetPort | default $svcPort }}
+                  number: {{ $targetPort }}
           {{- end }}
     {{- end }}
   tls:
