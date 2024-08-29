@@ -1,0 +1,19 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: httpd-scaled-object
+  namespace: httpd-autoscaling
+  labels:
+    deploymentName: httpd
+spec:
+  maxReplicaCount: 12
+  scaleTargetRef:
+    name: httpd
+  triggers:
+    - type: metrics-api
+      metadata:
+        targetValue: "100"
+        url: "http://httpd-metrics-exporter.httpd-autoscaling:9117/metrics"
+        valueLocation: 'apache_sent_kilobytes_total'
+        format: "prometheus"
+        unsafeSsl: "true"
