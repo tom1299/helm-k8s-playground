@@ -1,3 +1,10 @@
+```
+kubectl apply -f httpd-config.yaml
+kubectl apply -f httpd-deployment.yaml
+kubectl apply -f httpd-service.yaml
+kubectl apply -f httpd-metrics-exporter-service.yaml  
+```
+
 ```sh
 kubectl port-forward service/httpd 8888:8888 -n httpd-autoscaling
 kubectl port-forward service/httpd-metrics-exporter 9117:9117 -n httpd-autoscaling
@@ -23,3 +30,28 @@ kubectl debug -n keda keda-operator-<pod-id> -ti --image=nicolaka/netshoot --tar
 
 **Next**
 * Try prometheus
+
+**Prometheus operator installation**
+Use port-forwarding to access the prometheus dashboard:
+```sh
+kubectl port-forward svc/prometheus-operator-kube-p-prometheus -n monitoring 9090:9090
+```
+
+```sh
+http://localhost:9090/service-discovery?search=
+```
+
+**Solution for the issue**
+https://github.com/prometheus-operator/kube-prometheus/issues/1392#issuecomment-1411719953
+
+**Next**
+* Create a service monitor for the httpd service in tht httpd-autoscaling namespace
+* Create the prometheus query for scaling
+* Create the scaled object
+* Test the scaling
+
+Also make this change:
+```
+https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md
+By default, Prometheus will only pick up ServiceMonitors from the current namespace. To select ServiceMonitors from other namespaces, you can update the spec.serviceMonitorNamespaceSelector field of the Prometheus resource.
+```
