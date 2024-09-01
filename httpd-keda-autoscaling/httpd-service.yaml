@@ -12,4 +12,4 @@ spec:
       name: httpd
   selector:
     app.kubernetes.io/name: httpd
-  type: LoadBalancer
+  type: ClusterIP
