@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: httpd-autoscaling
+    app.kubernetes.io/name: httpd-autoscaling
+  name: httpd-autoscaling
