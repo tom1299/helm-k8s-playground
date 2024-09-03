@@ -32,6 +32,11 @@ kubectl debug -n keda keda-operator-<pod-id> -ti --image=nicolaka/netshoot --tar
 * Try prometheus
 
 **Prometheus operator installation**
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus-operator prometheus-community/kube-prometheus-stack -n monitoring -f prometheus-installation/values.yaml
+```
 Use port-forwarding to access the prometheus dashboard:
 ```sh
 kubectl port-forward svc/prometheus-operator-kube-p-prometheus -n monitoring 9090:9090
@@ -55,3 +60,11 @@ Also make this change:
 https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md
 By default, Prometheus will only pick up ServiceMonitors from the current namespace. To select ServiceMonitors from other namespaces, you can update the spec.serviceMonitorNamespaceSelector field of the Prometheus resource.
 ```
+
+rate(apache_accesses_total[30s])
+Start scaling at 20 requests per second and scale up to 50 requests per second
+
+kubectl port-forward svc/httpd -n httpd-autoscaling 8888:8888
+
+
+https://keda.sh/docs/2.15/reference/scaledobject-spec/

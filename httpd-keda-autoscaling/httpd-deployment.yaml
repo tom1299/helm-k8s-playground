@@ -5,6 +5,7 @@ metadata:
   namespace: httpd-autoscaling
   labels:
     app.kubernetes.io/name: httpd
+    app: httpd
 spec:
   replicas: 1
   selector:
@@ -14,6 +15,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: httpd
+        app: httpd
     spec:
       containers:
         - name: httpd

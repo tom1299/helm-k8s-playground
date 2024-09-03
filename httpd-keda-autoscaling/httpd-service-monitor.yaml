@@ -2,16 +2,13 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: httpd-service-monitor
-  namespace: monitoring
+  namespace: httpd-autoscaling
   labels:
     release: prometheus-operator
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: httpd-metrics-exporter
-  namespaceSelector:
-    matchNames:
-    - httpd-autoscaling
   endpoints:
   - port: prometheus
     path: /metrics

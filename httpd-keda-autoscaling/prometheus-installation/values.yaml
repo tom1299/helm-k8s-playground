@@ -1,0 +1,8 @@
+prometheus:
+  prometheusSpec:
+    podMonitorNamespaceSelector:
+      matchLabels:
+        prometheus-monitoring: "enabled"
+    serviceMonitorNamespaceSelector:
+      matchLabels:
+        prometheus-monitoring: "enabled"

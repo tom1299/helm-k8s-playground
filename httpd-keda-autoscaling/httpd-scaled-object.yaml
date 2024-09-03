@@ -6,14 +6,24 @@ metadata:
   labels:
     deploymentName: httpd
 spec:
-  maxReplicaCount: 12
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 60
+          policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 30
+  minReplicaCount: 1
+  maxReplicaCount: 5
   scaleTargetRef:
     name: httpd
   triggers:
-    - type: metrics-api
+    - type: prometheus
       metadata:
-        targetValue: "100"
-        url: "http://httpd-metrics-exporter.httpd-autoscaling:9117/metrics"
-        valueLocation: 'apache_sent_kilobytes_total'
-        format: "prometheus"
+        serverAddress: http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090
+        query: sum(rate(apache_accesses_total[30s]))/sum(kube_pod_info{pod=~"httpd.*"})
         unsafeSsl: "true"
+        threshold: '0.1'
+        activationThreshold: '0.2'
