@@ -23,7 +23,7 @@ spec:
     - type: prometheus
       metadata:
         serverAddress: http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090
-        query: sum(rate(apache_accesses_total[30s]))/sum(kube_pod_info{pod=~"httpd.*"})
+        query: sum(rate(apache_accesses_total[60s]))/sum(kube_pod_info{pod=~"httpd.*"})
         unsafeSsl: "true"
-        threshold: '0.1'
-        activationThreshold: '0.2'
+        threshold: '100'
+        activationThreshold: '100'

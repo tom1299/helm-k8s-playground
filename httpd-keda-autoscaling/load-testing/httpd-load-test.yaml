@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: httpd-load-test
+  namespace: httpd-autoscaling
+spec:
+  restartPolicy: Never
+  containers:
+  - name: k6
+    image: grafana/k6
+    volumeMounts:
+      - mountPath: /scripts
+        name: load-test-js
+    args:
+      - "run"
+      - "/scripts/load-test.js"
+  volumes:
+    - name: load-test-js
+      configMap:
+        name: load-test-config
+        items:
+          - key: load-test.js
+            path: load-test.js
