@@ -68,3 +68,6 @@ kubectl port-forward svc/httpd -n httpd-autoscaling 8888:8888
 
 
 https://keda.sh/docs/2.15/reference/scaledobject-spec/
+
+Next:
+* Containerize the scaling test
