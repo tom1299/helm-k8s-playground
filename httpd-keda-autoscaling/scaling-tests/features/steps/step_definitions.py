@@ -1,6 +1,7 @@
-from behave import given, step
+from behave import step
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+from prometheus_api_client import PrometheusConnect
 import logging
 import os
 import time
@@ -48,6 +49,38 @@ def establish_cluster_connection(context):
     context.namespace = "httpd-autoscaling"
 
 
+@step('I can connect to the prometheus service')
+def connect_to_prometheus(context):
+    prometheus_url = os.getenv("PROMETHEUS_URL", "http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090")
+
+    try:
+        prom = PrometheusConnect(disable_ssl=True)
+        if prom.check_prometheus_connection():
+            print("Successfully connected to the Prometheus service")
+            context.prometheus_client = prom
+        else:
+            raise Exception("Failed to connect to Prometheus service")
+    except Exception as e:
+        raise Exception(f"Exception when connecting to Prometheus service: {e}")
+
+
+@step('The value for the prometheus query "{query}" gets smaller than {threshold:f} within {timeout:d} seconds')
+def check_prometheus_query_value(context, query, threshold, timeout):
+    prom = context.prometheus_client
+    end_time = time.time() + timeout
+
+    while time.time() < end_time:
+        result = prom.custom_query(query=query)
+        if result:
+            value = float(result[0]['value'][1])
+            if value < threshold:
+                print(f"Query value {value} is smaller than {threshold}")
+                return
+        time.sleep(5)
+
+    raise Exception(f"Query value did not become smaller than {threshold} within {timeout} seconds")
+
+
 @step('The namespace "{namespace}" exists')
 def check_namespace_exists(context, namespace):
     v1 = client.CoreV1Api(context.api_client)
@@ -61,18 +94,15 @@ def check_namespace_exists(context, namespace):
     context.namespace = namespace
 
 
-@step('The deployment "{deployment_name}" is installed having {replica_count:d} replica running')
-def check_deployment_replicas(context, deployment_name, replica_count):
+@step('The deployment "{deployment_name}" is installed')
+def check_deployment(context, deployment_name):
     v1_apps = client.AppsV1Api(context.api_client)
     namespace = context.namespace
 
     try:
         deployment = v1_apps.read_namespaced_deployment(deployment_name, namespace)
-        actual_replicas = deployment.status.ready_replicas
-
-        if actual_replicas != replica_count:
-            raise Exception(
-                f"Deployment {deployment_name} has {actual_replicas} replicas running, expected {replica_count}")
+        if not deployment:
+            raise Exception(f"Deployment {deployment_name} does not exist in namespace {namespace}")
     except client.exceptions.ApiException as e:
         raise Exception(f"Exception when calling AppsV1Api->read_namespaced_deployment: {e}")
 
@@ -152,8 +182,8 @@ def check_pod_running(context, pod_name, timeout):
     raise Exception(f"Pod {pod_name} is not running in namespace {namespace} within {timeout} seconds")
 
 
-@step('The deployment "{deployment_name}" should have {replica_count:d} replicas running within {timeout:d} seconds')
-def check_deployment_replicas_within_timeout(context, deployment_name, replica_count, timeout):
+@step('The deployment "{deployment_name}" {status} {replica_count:d} replicas running within {timeout:d} seconds')
+def check_deployment_replicas_within_timeout(context, deployment_name, status, replica_count, timeout):
     v1_apps = client.AppsV1Api(context.api_client)
     namespace = context.namespace
     start_time = time.time()
