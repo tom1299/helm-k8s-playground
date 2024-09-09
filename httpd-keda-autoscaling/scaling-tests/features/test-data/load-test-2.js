@@ -1,0 +1,33 @@
+import http from 'k6/http';
+
+export const options = {
+  discardResponseBodies: true,
+  scenarios: {
+    contacts: {
+      executor: 'ramping-arrival-rate',
+      // Start iterations per `timeUnit`
+      startRate: 0,
+      // Start `startRate` iterations per minute
+      timeUnit: '1m',
+      // Pre-allocate necessary VUs.
+      preAllocatedVUs: 50,
+      stages: [
+        // Start 300 iterations per `timeUnit` for the first minute.
+        { target: 100, duration: '1m' },
+
+        // Linearly ramp-up to starting 600 iterations per `timeUnit` over the following two minutes.
+        { target: 300, duration: '1m' },
+
+        // Continue starting 600 iterations per `timeUnit` for the following four minutes.
+        { target: 300, duration: '1m' },
+
+        // Linearly ramp-down to starting 60 iterations per `timeUnit` over the last two minutes.
+        { target: 50, duration: '2m' },
+      ],
+    },
+  }
+};
+
+export default function () {
+  http.get('http://httpd.httpd-autoscaling.svc.cluster.local:8888');
+}

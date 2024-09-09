@@ -156,13 +156,14 @@ def check_pod_running(context, pod_name, timeout):
 def check_deployment_replicas_within_timeout(context, deployment_name, replica_count, timeout):
     v1_apps = client.AppsV1Api(context.api_client)
     namespace = context.namespace
-    end_time = time.time() + timeout
+    start_time = time.time()
+    end_time = start_time + timeout
 
     while time.time() < end_time:
         try:
             deployment = v1_apps.read_namespaced_deployment(deployment_name, namespace)
             if deployment.status.ready_replicas == replica_count:
-                print(f"Deployment {deployment_name} has {replica_count} replicas running in namespace {namespace}")
+                print(f"Deployment {deployment_name} has {replica_count} replicas running in namespace {namespace}, within {time.time() - start_time} seconds")
                 return
         except client.exceptions.ApiException as e:
             raise Exception(f"Exception when reading Deployment: {e}")
