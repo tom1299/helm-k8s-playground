@@ -10,11 +10,11 @@ spec:
     horizontalPodAutoscalerConfig:
       behavior:
         scaleDown:
-          stabilizationWindowSeconds: 60
+          stabilizationWindowSeconds: 30
           policies:
             - type: Pods
               value: 1
-              periodSeconds: 30
+              periodSeconds: 10
   minReplicaCount: 1
   maxReplicaCount: 5
   scaleTargetRef:
@@ -23,7 +23,6 @@ spec:
     - type: prometheus
       metadata:
         serverAddress: http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090
-        query: sum(rate(apache_accesses_total[60s]))/sum(kube_pod_info{pod=~"httpd.*"})
+        query: sum(rate(apache_accesses_total[20s]))/sum(kube_pod_info{pod=~"httpd.*"})
         unsafeSsl: "true"
-        threshold: '100'
-        activationThreshold: '100'
+        threshold: '1.6'
