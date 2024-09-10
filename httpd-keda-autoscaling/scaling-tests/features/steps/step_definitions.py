@@ -29,6 +29,7 @@ def establish_cluster_connection(context):
             context.api_client = client.ApiClient()
         elif not hasattr(context, 'api_client'):
             kubeconfig_path = os.getenv('KUBECONFIG')
+            print(f"Using kubeconfig file: {kubeconfig_path}")
 
             config.load_kube_config(config_file=kubeconfig_path)
 
@@ -51,8 +52,6 @@ def establish_cluster_connection(context):
 
 @step('I can connect to the prometheus service')
 def connect_to_prometheus(context):
-    prometheus_url = os.getenv("PROMETHEUS_URL", "http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090")
-
     try:
         prom = PrometheusConnect(disable_ssl=True)
         if prom.check_prometheus_connection():
