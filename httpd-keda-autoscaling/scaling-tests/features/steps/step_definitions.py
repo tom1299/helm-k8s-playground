@@ -53,7 +53,8 @@ def establish_cluster_connection(context):
 @step('I can connect to the prometheus service')
 def connect_to_prometheus(context):
     try:
-        prom = PrometheusConnect(disable_ssl=True)
+        prom_url = os.getenv("PROMETHEUS_URL", "http://127.0.0.1:9090")
+        prom = PrometheusConnect(prom_url, disable_ssl=True)
         if prom.check_prometheus_connection():
             print("Successfully connected to the Prometheus service")
             context.prometheus_client = prom

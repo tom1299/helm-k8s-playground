@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: scaling-test
+  namespace: httpd-autoscaling
+spec:
+  restartPolicy: Never
+  serviceAccountName: scaling-test-sa
+  containers:
+  - name: behave
+    image: ghcr.io/tom1299/scaling-test:1.0
+    imagePullPolicy: Always
+    env:
+      - name: PROMETHEUS_URL
+        value: "http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090"

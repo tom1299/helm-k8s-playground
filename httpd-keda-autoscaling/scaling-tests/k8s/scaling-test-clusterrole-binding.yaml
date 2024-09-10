@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: scaling-test-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: scaling-test-sa
+  namespace: httpd-autoscaling
+roleRef:
+  kind: ClusterRole
+  name: scaling-test-role
+  apiGroup: rbac.authorization.k8s.io

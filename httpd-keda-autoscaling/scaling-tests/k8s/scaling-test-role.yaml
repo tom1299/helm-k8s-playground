@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scaling-test-role
+  namespace: httpd-autoscaling
+rules:
+- apiGroups: [""]
+  resources: ["pods", "configmaps"]
+  verbs: ["get", "list", "create", "delete"]
+- apiGroups: ["apps"]
+  resources: [ "deployments"]
+  verbs: ["get", "list", "create", "delete"]
