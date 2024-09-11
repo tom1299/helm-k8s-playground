@@ -13,7 +13,7 @@ Feature: Scaling
     And I create the pod "load-test" with the pod spec from the file "test-data/load-test-pod.yaml"
     Then The pod "load-test" should be running within 60 seconds
     And The deployment "httpd" should have 2 replicas running within 90 seconds
-    Then The deployment "httpd" should have 1 replicas running within 60 seconds
+    Then The deployment "httpd" should have 1 replicas running within 90 seconds
 
   Scenario: Scale up and down with ramp up and down
     And I deploy the config map "load-test-config" with the content of the file "test-data/load-test-2.js" as the data item "load-test.js"

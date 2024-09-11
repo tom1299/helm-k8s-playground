@@ -8,7 +8,7 @@ spec:
   serviceAccountName: scaling-test-sa
   containers:
   - name: behave
-    image: ghcr.io/tom1299/scaling-test:1.0
+    image: ghcr.io/tom1299/scaling-test:1.1
     imagePullPolicy: Always
     env:
       - name: PROMETHEUS_URL
