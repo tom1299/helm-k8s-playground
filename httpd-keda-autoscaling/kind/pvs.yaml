@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: prometheus
+  name: mysql
 spec:
   storageClassName: standard
   accessModes:
@@ -9,4 +9,4 @@ spec:
   capacity:
     storage: 20Gi
   hostPath:
-    path: /tmp/prometheus
+    path: /tmp/mysql

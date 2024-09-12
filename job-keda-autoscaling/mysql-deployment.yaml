@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: job-autoscaling
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: mysql
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: job-autoscaling
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "until mysql -h 127.0.0.1 -u root -ppassword -e 'SHOW DATABASES'; do echo 'Waiting for mysql'; sleep 5; done; mysql -h 127.0.0.1 -u root -ppassword -e 'CREATE DATABASE IF NOT EXISTS jobs; USE jobs; CREATE TABLE IF NOT EXISTS jobs (id INT PRIMARY KEY, name VARCHAR(255));'"]
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+
+---
+ apiVersion: v1
+ kind: PersistentVolumeClaim
+ metadata:
+   name: mysql-pv-claim
+   namespace: job-autoscaling
+ spec:
+   volumeName: mysql
+   accessModes:
+     - ReadWriteOnce
+   resources:
+     requests:
+       storage: 500Mi

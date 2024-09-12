@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: job-autoscaling
+    app.kubernetes.io/name: job-autoscaling
+  name: job-autoscaling
