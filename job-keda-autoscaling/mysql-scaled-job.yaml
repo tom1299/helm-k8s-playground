@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+  namespace: job-autoscaling
+type: Opaque
+data:
+  password: cGFzc3dvcmQ=
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: mysql-scaledjob
+  namespace: job-autoscaling
+spec:
+  jobTargetRef:
+    parallelism: 1
+    template:
+      spec:
+        containers:
+        - name: mysql-job
+          image: mysql:5.6
+          env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: password
+          command: ["sh", "-c"]
+          args:
+            - "sleep 10; mysql -h mysql -u root -p${MYSQL_ROOT_PASSWORD} -e 'DELETE FROM jobs.jobs ORDER BY id LIMIT 1;'"
+  pollingInterval: 10
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  maxReplicaCount: 1
+  triggers:
+  - type: mysql
+    metadata:
+      query: "SELECT COUNT(*) FROM jobs;"
+      host: mysql.job-autoscaling.svc.cluster.local
+      port: "3306"
+      username: root
+      passwordFromEnv: MYSQL_ROOT_PASSWORD
+      dbName: jobs
+      queryValue: "5"
+      activationQueryValue: "5"
