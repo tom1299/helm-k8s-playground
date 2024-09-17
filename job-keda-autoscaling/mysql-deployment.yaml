@@ -41,7 +41,7 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["/bin/sh", "-c", "until mysql -h 127.0.0.1 -u root -ppassword -e 'SHOW DATABASES'; do echo 'Waiting for mysql'; sleep 5; done; mysql -h 127.0.0.1 -u root -ppassword -e 'CREATE DATABASE IF NOT EXISTS jobs; USE jobs; CREATE TABLE IF NOT EXISTS jobs (id INT PRIMARY KEY, name VARCHAR(255));'"]
+              command: ["/bin/sh", "-c", "until mysql -h 127.0.0.1 -u root -ppassword -e 'SHOW DATABASES'; do echo 'Waiting for mysql'; sleep 5; done; mysql -h 127.0.0.1 -u root -ppassword -e 'CREATE DATABASE IF NOT EXISTS jobs; USE jobs; CREATE TABLE IF NOT EXISTS jobs (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255));'"]
       volumes:
       - name: mysql-persistent-storage
         persistentVolumeClaim:

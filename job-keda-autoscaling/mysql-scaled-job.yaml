@@ -28,10 +28,10 @@ spec:
                 key: password
           command: ["sh", "-c"]
           args:
-            - "sleep 10; mysql -h mysql -u root -p${MYSQL_ROOT_PASSWORD} -e 'DELETE FROM jobs.jobs ORDER BY id LIMIT 1;'"
+            - "sleep 20; mysql -h mysql -u root -p${MYSQL_ROOT_PASSWORD} -e 'DELETE FROM jobs.jobs ORDER BY id LIMIT 1;'"
   pollingInterval: 10
-  successfulJobsHistoryLimit: 5
-  failedJobsHistoryLimit: 5
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
   maxReplicaCount: 1
   triggers:
   - type: mysql
