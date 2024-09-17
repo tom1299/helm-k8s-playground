@@ -1,5 +1,5 @@
 from behave import step
-from kubernetes import client, config
+from kubernetes import client, config, stream
 from kubernetes.client.rest import ApiException
 from prometheus_api_client import PrometheusConnect
 import logging
@@ -214,3 +214,155 @@ def delete_pod(context, pod_name):
     except client.exceptions.ApiException as e:
         if e.status != 404:
             raise Exception(f"Exception when deleting Pod: {e}")
+
+
+@step('The database "{db_name}" exists')
+def ensure_database_exists(context, db_name):
+    v1 = client.CoreV1Api(context.api_client)
+    namespace = context.namespace
+
+    label_selector = "app=mysql"
+
+    pods = v1.list_namespaced_pod(namespace, label_selector=label_selector)
+    mysql_pod_name = pods.items[0].metadata.name
+
+    sql_command = f"mysql -u root -ppassword -e 'CREATE DATABASE IF NOT EXISTS {db_name};'"
+
+    exec_command = [
+        "/bin/sh",
+        "-c",
+        sql_command
+    ]
+
+    resp = stream.stream(
+        v1.connect_get_namespaced_pod_exec,
+        mysql_pod_name,
+        namespace,
+        command=exec_command,
+        stderr=True,
+        stdin=False,
+        stdout=True,
+        tty=False
+    )
+
+    print("Command output: \n%s", resp)
+
+
+@step('There are {record_count:d} records in the "{table_name}" table in the "{db_name}" database')
+def ensure_records_in_table(context, record_count, table_name, db_name):
+    v1 = client.CoreV1Api(context.api_client)
+    namespace = context.namespace
+
+    label_selector = "app=mysql"
+
+    pods = v1.list_namespaced_pod(namespace, label_selector=label_selector)
+    mysql_pod_name = pods.items[0].metadata.name
+
+    sql_command = f"""
+    mysql -u root -ppassword -e "
+    USE {db_name};
+    DELETE FROM {table_name};
+    INSERT INTO {table_name} (name) VALUES {', '.join([f"('job{i+1}')" for i in range(record_count)])};
+    "
+    """
+
+    exec_command = [
+        "/bin/sh",
+        "-c",
+        sql_command
+    ]
+
+    resp = stream.stream(
+        v1.connect_get_namespaced_pod_exec,
+        mysql_pod_name,
+        namespace,
+        command=exec_command,
+        stderr=True,
+        stdin=False,
+        stdout=True,
+        tty=False
+    )
+
+    print("Command output: \n%s", resp)
+
+
+@step('I delete all pods except for {pod_name}')
+def delete_all_pods_except(context, pod_name):
+    v1 = client.CoreV1Api(context.api_client)
+    namespace = context.namespace
+
+    pods = v1.list_namespaced_pod(namespace)
+    exception_pod_names = []
+
+    # Find all exception pod names by label
+    label_selector = f"app={pod_name}"
+    exception_pods = v1.list_namespaced_pod(namespace, label_selector=label_selector)
+    for pod in exception_pods.items:
+        exception_pod_names.append(pod.metadata.name)
+
+    for pod in pods.items:
+        if pod.metadata.name not in exception_pod_names:
+            v1.delete_namespaced_pod(name=pod.metadata.name, namespace=namespace)
+            print(f"Pod {pod.metadata.name} deleted successfully in namespace {namespace}")
+
+    if exception_pod_names:
+        print(f"Pods {', '.join(exception_pod_names)} were not deleted")
+    else:
+        print(f"No pods found with label app={pod_name}")
+
+
+@step('I run the following sql script in the database "{db_name}"')
+def run_sql_script_in_database(context, db_name):
+    sql_script = context.text
+    v1 = client.CoreV1Api(context.api_client)
+    namespace = context.namespace
+
+    label_selector = "app=mysql"
+
+    pods = v1.list_namespaced_pod(namespace, label_selector=label_selector)
+    mysql_pod_name = pods.items[0].metadata.name
+
+    sql_command = f"""
+    mysql -u root -ppassword -e "
+    USE {db_name};
+    {sql_script}
+    "
+    """
+
+    exec_command = [
+        "/bin/sh",
+        "-c",
+        sql_command
+    ]
+
+    resp = stream.stream(
+        v1.connect_get_namespaced_pod_exec,
+        mysql_pod_name,
+        namespace,
+        command=exec_command,
+        stderr=True,
+        stdin=False,
+        stdout=True,
+        tty=False
+    )
+
+    print("Command output: \n%s", resp)
+
+
+@step('There should be {expected_count:d} pods with status "{status}" within {timeout:d} seconds')
+def check_pods_status_within_timeout(context, expected_count, status, timeout):
+    v1 = client.CoreV1Api(context.api_client)
+    namespace = context.namespace
+    end_time = time.time() + timeout
+
+    while time.time() < end_time:
+        pods = v1.list_namespaced_pod(namespace)
+        completed_pods = [pod for pod in pods.items if pod.status.phase == status]
+
+        if len(completed_pods) == expected_count:
+            print(f"Found {expected_count} pods with status '{status}' within {timeout} seconds")
+            return
+
+        time.sleep(5)
+
+    raise Exception(f"Did not find {expected_count} pods with status '{status}' within {timeout} seconds")
