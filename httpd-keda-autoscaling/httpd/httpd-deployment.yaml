@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: httpd
-  namespace: httpd-autoscaling
   labels:
     app.kubernetes.io/name: httpd
     app: httpd
@@ -28,7 +27,7 @@ spec:
               subPath: httpd.conf
               name: httpd
         - name: httpd-exporter
-          image: lusotycoon/apache-exporter:v1.0.0
+          image: lusotycoon/apache-exporter:v1.0.9
           ports:
             - containerPort: 9117
               name: prometheus

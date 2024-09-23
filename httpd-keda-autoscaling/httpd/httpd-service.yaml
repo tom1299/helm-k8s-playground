@@ -2,7 +2,6 @@ kind: Service
 apiVersion: v1
 metadata:
   name: httpd
-  namespace: httpd-autoscaling
   labels:
     app.kubernetes.io/name: httpd
 spec:

@@ -2,7 +2,6 @@ apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
   name: httpd-scaled-object
-  namespace: httpd-autoscaling
   labels:
     deploymentName: httpd
 spec:
@@ -22,7 +21,7 @@ spec:
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090
-        query: sum(rate(apache_accesses_total[1m]))
+        serverAddress: http://prometheus
+        query: rate(apache_accesses_total[1m])
         unsafeSsl: "true"
         threshold: '1.6'

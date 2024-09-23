@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: httpd-autoscaling
+
+configMapGenerator:
+- name: httpd-config
+  options:
+    disableNameSuffixHash: false
+- name: scaled-object-config
+  options:
+    disableNameSuffixHash: true
+  literals:
+  - prometheusURL=http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090
+  - promqlQuery=sum(rate(apache_accesses_total[1m]))
+
+resources:
+  - httpd-namespace.yaml
+  - httpd-deployment.yaml
+  - httpd-metrics-exporter-service.yaml
+  - httpd-scaled-object.yaml
+  - httpd-service.yaml
+  - httpd-service-monitor.yaml
+
+replacements:
+- source:
+    kind: ConfigMap
+    version: v1
+    name: scaled-object-config
+    fieldPath: data.prometheusURL
+  targets:
+  - select:
+      kind: ScaledObject
+      name: httpd-scaled-object
+    fieldPaths:
+    - spec.triggers.0.metadata.serverAddress
+- source:
+    kind: ConfigMap
+    version: v1
+    name: scaled-object-config
+    fieldPath: data.promqlQuery
+  targets:
+  - select:
+      kind: ScaledObject
+      name: httpd-scaled-object
+    fieldPaths:
+    - spec.triggers.0.metadata.query

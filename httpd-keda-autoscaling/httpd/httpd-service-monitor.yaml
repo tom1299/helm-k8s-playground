@@ -2,7 +2,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: httpd-service-monitor
-  namespace: httpd-autoscaling
   labels:
     release: prometheus-operator
 spec:
