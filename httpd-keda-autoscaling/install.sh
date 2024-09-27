@@ -4,6 +4,9 @@ set -e
 
 # Create the cluster if it doesn't exist
 if ! kind get clusters | grep -q '^kind$'; then
+  if [[ ! -d /tmp/mysql ]]; then
+    mkdir -p /tmp/mysql
+  fi
   kind create cluster --config kind/kind.yaml
 else
   echo "Cluster already exists"
@@ -25,7 +28,12 @@ echo "Waiting for all PersistentVolumes to be available..."
 timeout=120
 interval=5
 elapsed=0
-while [[ $(kubectl get pv -o jsonpath='{.items[*].status.phase}' | grep -o 'Available' | wc -l) -ne 2 ]]; do
+
+# Get the number of persistent volumes
+persistent_volume_count=$(kubectl get pv --no-headers | wc -l)
+echo "Number of PersistentVolumes to be available: $persistent_volume_count"
+
+while [[ $(kubectl get pv -o jsonpath='{.items[*].status.phase}' | grep -o 'Available' | wc -l) -ne persistent_volume_count ]]; do
   if [[ $elapsed -ge $timeout ]]; then
     echo "Timeout waiting for PersistentVolumes to be available"
     exit 1
@@ -73,12 +81,8 @@ else
   echo "httpd namespace already exists"
 fi
 
-# Apply httpd resources if they don't exist
-if [[ $(kubectl get deployments -n httpd-autoscaling | wc -l ) -lt 2 ]]; then
-  kubectl apply -f httpd
-else
-  echo "httpd resources already exist"
-fi
+# Apply httpd resources
+kubectl apply -k ./httpd
 
 # Wait until all pods in the namespace httpd-autoscaling are running
 echo "Waiting for all pods in the namespace httpd-autoscaling to be running..."

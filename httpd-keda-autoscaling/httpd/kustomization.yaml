@@ -7,6 +7,8 @@ configMapGenerator:
 - name: httpd-config
   options:
     disableNameSuffixHash: false
+  files:
+    - httpd.conf=httpd.conf
 - name: scaled-object-config
   options:
     disableNameSuffixHash: true
@@ -45,3 +47,14 @@ replacements:
       name: httpd-scaled-object
     fieldPaths:
     - spec.triggers.0.metadata.query
+- source:
+    kind: ConfigMap
+    version: v1
+    name: httpd-config
+    fieldPath: metadata.name
+  targets:
+  - select:
+      kind: Deployment
+      name: httpd
+    fieldPaths:
+    - spec.template.spec.volumes.0.configMap.name
