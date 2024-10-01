@@ -25,5 +25,5 @@ The goal of this task is to produce a script using AI assistant tools to automat
 
 ## Preliminary process description
 * Use kubectl to select the names of the secrets from certificates that match a certain `spec.issuerRef.name` in a specific namespace and store the names of the certificates in a list
-* For each secret extract the private key and public certificate in files with the secret name as a prefix. E.g: `mywebsite-tls-secret.key` and `mywebsite-tls-secret.pem`
+* For each secret extract the private key and public certificate in files with the secret name as a prefix. E.g: `mywebsite-tls-secret.key` and `mywebsite-tls-secret.pem` in a temporary folder that is created by the script
 * Use the `certbot revoke` command with the reason `superseded` to revoke the certificate stored in the files
