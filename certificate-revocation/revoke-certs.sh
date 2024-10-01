@@ -6,14 +6,14 @@ log() {
 }
 
 # Function to handle errors
-error_exit() {
+error_log() {
   log "ERROR: $1"
-  exit 1
 }
 
 # Check if the correct number of arguments is provided
 if [ "$#" -ne 3 ]; then
-  error_exit "Usage: $0 <issuer-name> <namespace> <certbot-server>"
+  error_log "Usage: $0 <issuer-name> <namespace> <certbot-server>"
+  exit 1
 fi
 
 ISSUER_NAME=$1
@@ -28,16 +28,18 @@ CERTBOT_LOG_DIR=${CERTBOT_LOG_DIR:-~/.certbot/logs}
 # Create a temporary directory for storing key and cert files
 TEMP_DIR=$(mktemp -d)
 if [ ! -d "$TEMP_DIR" ]; then
-  error_exit "Failed to create temporary directory"
+  error_log "Failed to create temporary directory"
+  exit 1
 fi
 log "Created temporary directory: $TEMP_DIR"
 
 # Get the list of secrets with the specified issuer name
 log "Fetching secrets with issuer name '$ISSUER_NAME' in namespace '$NAMESPACE'..."
-SECRETS=$(kubectl get secrets -n "$NAMESPACE" -o jsonpath="{.items[?(@.metadata.annotations['cert-manager.io/issuer-name']=='$ISSUER_NAME')].metadata.name}")
+SECRETS=$(kubectl get secrets -n "$NAMESPACE" -o jsonpath="{.items[?(@.metadata.annotations['cert-manager\.io/issuer-name']=='$ISSUER_NAME')].metadata.name}")
 
 if [ -z "$SECRETS" ]; then
-  error_exit "No secrets found with issuer name '$ISSUER_NAME' in namespace '$NAMESPACE'"
+  error_log "No secrets found with issuer name '$ISSUER_NAME' in namespace '$NAMESPACE'"
+  exit 1
 fi
 
 # Loop through each secret and revoke the certificate
@@ -45,12 +47,15 @@ for SECRET in $SECRETS; do
   log "Processing secret '$SECRET'..."
 
   # Extract the private key and certificate
-  kubectl get secret "$SECRET" -n "$NAMESPACE" -o jsonpath="{.data['tls\.key']}" | base64 --decode > "$TEMP_DIR/${SECRET}.key" || error_exit "Failed to extract private key from secret '$SECRET'"
-  kubectl get secret "$SECRET" -n "$NAMESPACE" -o jsonpath="{.data['tls\.crt']}" | base64 --decode > "$TEMP_DIR/${SECRET}.pem" || error_exit "Failed to extract certificate from secret '$SECRET'"
+  kubectl get secret "$SECRET" -n "$NAMESPACE" -o jsonpath="{.data['tls\.key']}" | base64 --decode > "$TEMP_DIR/${SECRET}.key" || { error_log "Failed to extract private key from secret '$SECRET'"; continue; }
+  kubectl get secret "$SECRET" -n "$NAMESPACE" -o jsonpath="{.data['tls\.crt']}" | base64 --decode > "$TEMP_DIR/${SECRET}.pem" || { error_log "Failed to extract certificate from secret '$SECRET'"; continue; }
 
   # Revoke the certificate using certbot
   log "Revoking certificate for secret '$SECRET'..."
-  certbot revoke --cert-path "$TEMP_DIR/${SECRET}.pem" --key-path "$TEMP_DIR/${SECRET}.key" --reason superseded --server "$CERTBOT_SERVER" --config-dir "$CERTBOT_CONFIG_DIR" --work-dir "$CERTBOT_WORK_DIR" --logs-dir "$CERTBOT_LOG_DIR" || error_exit "Failed to revoke certificate for secret '$SECRET'"
+  if ! certbot revoke --cert-path "$TEMP_DIR/${SECRET}.pem" --key-path "$TEMP_DIR/${SECRET}.key" --reason superseded --server "$CERTBOT_SERVER" --config-dir "$CERTBOT_CONFIG_DIR" --work-dir "$CERTBOT_WORK_DIR" --logs-dir "$CERTBOT_LOG_DIR"; then
+    error_log "Failed to revoke certificate for secret '$SECRET'"
+    continue
+  fi
 
   log "Certificate for secret '$SECRET' revoked successfully."
 done
@@ -59,4 +64,4 @@ done
 rm -rf "$TEMP_DIR"
 log "Temporary directory $TEMP_DIR removed."
 
-log "All certificates revoked successfully."
+log "All certificates processed."
