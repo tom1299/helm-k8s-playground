@@ -6,7 +6,8 @@ import json
 import traceback
 
 import requests
-from kubernetes import client, config
+
+from k8s_utils import get_api_client
 
 PORT = 8080
 LABEL_SELECTOR = os.getenv('LABEL_SELECTOR', 'app=acme-challenge-dispatcher')
@@ -36,6 +37,9 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
     acme_clients_cache = {}
 
     api_client = None
+
+    def __init__(self):
+        pass
 
     def do_GET(self):
         logger.info(f"Received request: {self.path}, Headers: {self.headers}")
@@ -129,7 +133,10 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
     def get_acme_clients(self):
         v1 = self.get_api_client()
         pods = v1.list_namespaced_pod(namespace='wlan', label_selector=LABEL_SELECTOR)
-        logger.debug(f"Found {len(pods.items)} pods with label selector '{LABEL_SELECTOR}'")
+        if not pods:
+            logger.info(f"No pods found with label selector '{LABEL_SELECTOR}'")
+            return []
+        logger.info(f"Found {len(pods.items)} pods with label selector '{LABEL_SELECTOR}'")
         return [pod.status.pod_ip for pod in pods.items]
 
     def send_success(self, response, token, client_ip):
@@ -140,23 +147,8 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         logger.info(f"Successfully wrote response {response.content} for token {token} from ACME client {client_ip}")
 
     def get_api_client(self):
-        if not self.api_client:
-            if os.path.exists('/var/run/secrets/kubernetes.io/serviceaccount/token'):
-                logger.info("Using in-cluster configuration with service account token to access the API server")
-                config.load_incluster_config()
-                self.api_client = client.CoreV1Api()
-            else:
-                kubeconfig_path = os.getenv('KUBECONFIG')
-                logger.info(f"Using configuration from kubeconfig file at '{kubeconfig_path}'")
-
-                config.load_kube_config(config_file=kubeconfig_path)
-
-                username = os.getenv('K8S_USER')
-                password = os.getenv('K8S_USER_PASSWORD')
-                client.Configuration().username = username
-                client.Configuration().password = password
-
-                self.api_client = client.CoreV1Api()
+        if self.api_client is None:
+            self.api_client = get_api_client(logger)
         return self.api_client
 
     def handle_health_request(self):
