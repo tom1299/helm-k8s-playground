@@ -38,47 +38,76 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
     api_client = None
 
     def do_GET(self):
+        logger.info(f"Received request: {self.path}, Headers: {self.headers}")
+
         if self.path == '/healthz':
-            self.is_healthy()
+            self.handle_health_request()
             return
         elif not self.path.startswith('/.well-known/acme-challenge/'):
-            self.send_response(404)
-            self.end_headers()
-            error_message = f"404 Not Found: Invalid path '{self.path}'"
-            logger.info(f"Invalid path: {self.path}")
-            self.wfile.write(error_message.encode())
+            self.handle_non_challenge_request()
             return
 
         token = self.extract_token(self.path)
         host = self.headers.get('Host')
         logger.info(f"Token: {token}, Host: {host}")
 
-        if token in self.acme_clients_cache:
-            client_ip = self.acme_clients_cache[token]
-            logger.info(f"Found ACME client with IP {client_ip} in cache for token {token}")
-            response = self.send_request_to_acme_client(client_ip, token, host)
-            if response and response.status_code == 200:
-                self.handle_successful_response(response, token, client_ip)
-                logger.info(f"Successfully returned response for token {token} from ACME client {client_ip}")
-                return
-            else:
-                self.acme_clients_cache.pop(token)
-                error_message = f"ACME client '{client_ip}' did not return 200 for token {token}: {response.status_code if response else 'No response'}. Removed {client_ip} from cache"
-                logger.error(error_message)
+        if not token or not host:
+            self.handle_missing_token_or_host()
+            return
 
+        if token in self.acme_clients_cache:
+            self.handle_cached_token(host, token)
+        else:
+            self.handle_new_token(host, token)
+
+    def handle_new_token(self, host, token):
+        logger.debug(f"Request of new token {token} for host {host} received")
         acme_clients = self.get_acme_clients()
         for client_ip in acme_clients:
+            logger.debug(f"Trying ACME client with ip {client_ip} and token {token}")
             response = self.send_request_to_acme_client(client_ip, token, host)
             if response and response.status_code == 200:
-                self.handle_successful_response(response, token, client_ip)
+                logger.debug(f"ACME client {client_ip} returned 200 and response {response.content} for token {token}. Adding {client_ip} to cache")
+                self.api_clients_cache[token] = client_ip
+                self.send_success(response, token, client_ip)
+                logger.info(
+                    f"Successfully returned response for token {token} from ACME client {client_ip}. Added {client_ip} to cache")
                 return
-            else:
-                logger.info(f"Client IP: {client_ip}, Response Code: {response.status_code if response else 'No response'}")
 
+        logger.error(f"None of the ACME clients returned 200 for token {token}. Returning 404")
+        self.send_404()
+
+    def handle_cached_token(self, host, token):
+        client_ip = self.acme_clients_cache[token]
+        logger.info(f"Found ACME client with IP {client_ip} in cache for token {token}")
+        response = self.send_request_to_acme_client(client_ip, token, host)
+        if response and response.status_code == 200:
+            self.send_success(response, token, client_ip)
+            logger.info(f"Successfully returned response for token {token} from ACME client {client_ip}")
+        else:
+            self.acme_clients_cache.pop(token)
+            error_message = f"ACME client '{client_ip}' did not return 200 for token {token}: {response.status_code if response else 'No response'}. Removed {client_ip} from cache"
+            logger.error(error_message)
+            self.send_404()
+
+    def send_404(self):
         self.send_response(404)
         self.end_headers()
-        error_message = "404 Not Found: No ACME matching client found"
-        logger.error(f"No ACME client returned 200 for token {token} and host {host}")
+        error_message = "404 Not Found"
+        self.wfile.write(error_message.encode())
+
+    def handle_missing_token_or_host(self):
+        self.send_response(400)
+        self.end_headers()
+        error_message = "400 Bad Request: Token and host are required"
+        logger.error("Token and / or host missing")
+        self.wfile.write(error_message.encode())
+
+    def handle_non_challenge_request(self):
+        self.send_response(404)
+        self.end_headers()
+        error_message = f"404 Not Found: Invalid path '{self.path}'"
+        logger.error(f"Invalid path: {self.path}")
         self.wfile.write(error_message.encode())
 
     def extract_token(self, path):
@@ -100,9 +129,10 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
     def get_acme_clients(self):
         v1 = self.get_api_client()
         pods = v1.list_namespaced_pod(namespace='wlan', label_selector=LABEL_SELECTOR)
+        logger.debug(f"Found {len(pods.items)} pods with label selector '{LABEL_SELECTOR}'")
         return [pod.status.pod_ip for pod in pods.items]
 
-    def handle_successful_response(self, response, token, client_ip):
+    def send_success(self, response, token, client_ip):
         self.acme_clients_cache[token] = client_ip
         self.send_response(200)
         self.end_headers()
@@ -129,7 +159,7 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
                 self.api_client = client.CoreV1Api()
         return self.api_client
 
-    def is_healthy(self):
+    def handle_health_request(self):
         try:
             acme_clients = self.get_acme_clients()
             if acme_clients is not None:
