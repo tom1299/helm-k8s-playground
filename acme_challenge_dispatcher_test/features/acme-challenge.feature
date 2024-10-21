@@ -8,4 +8,3 @@ Feature: Scaling the Apache httpd with KEDA
     | name | port | token | key |
     | acme-solver-1 | 8080 | abc | def |
     And I forward the port 8080 of the pod "acme-solver-1" to port 8080
-    And I wait for 1 minute

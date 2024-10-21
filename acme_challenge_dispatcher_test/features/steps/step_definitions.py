@@ -68,16 +68,18 @@ def forward_port(context, pod_port, pod_name, host_port):
     if not hasattr(context, 'port_forward_processes'):
         context.port_forward_processes = []
 
+    # Run a loop until the pod is in the state Running
+    v1 = context.api_client
+    while True:
+        pod = v1.read_namespaced_pod(name=pod_name, namespace=namespace)
+        if pod.status.phase == "Running":
+            break
+        sleep(1)
+
     try:
-        # Run the kubectl port-forward command
         process = subprocess.Popen(
-            ["kubectl", "port-forward", f"pod/{pod_name}", f"{host_port}:{pod_port}", "-n", namespace],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        # Store the process information in the list
+            ["kubectl", "port-forward", f"pod/{pod_name}", f"{host_port}:{pod_port}", "-n", namespace])
         context.port_forward_processes.append({'pod_name': pod_name, 'pid': process.pid})
-        print(f"Port {pod_port} of pod '{pod_name}' is now being forwarded to port {host_port} on the host.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to forward port: {e}")
 
