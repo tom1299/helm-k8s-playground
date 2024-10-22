@@ -2,3 +2,4 @@
 ingress-test/test-values.yaml
 **/kube_config
 **/__pycache__/
+**/.venv/
