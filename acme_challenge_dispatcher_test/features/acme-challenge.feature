@@ -1,5 +1,5 @@
-@httpd-scaling
-Feature: Scaling the Apache httpd with KEDA
+@acme-challenge
+Feature: Acme challenge processing
 
   Scenario: Simple scale up and down
     Given I have a connection to the cluster
@@ -8,8 +8,9 @@ Feature: Scaling the Apache httpd with KEDA
     And I deploy the acme challenge dispatcher pod with the following parameters:
     | name | image |
     | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:v4 |
-#    And I deploy an acme solver pod with the following parameters:
-#    | name | port | token | key |
-#    | acme-solver-1 | 8080 | abc | def |
-#    | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:latest |
-#    And I forward the port 8080 of the pod "acme-challenge-dispatcher-1" to port 8080
+    And I deploy an acme solver pod with the following parameters:
+    | name | port | token | key |
+    | acme-solver-1 | 8080 | abc | def |
+    And I forward the port 8080 of the pod "acme-challenge-dispatcher-1" to port 8080
+    And I wait for 1 minute
+    And I stop forwarding the port 8080 of the pod "acme-challenge-dispatcher-1"

@@ -180,6 +180,6 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(error_message.encode())
 
 if __name__ == '__main__':
-    with socketserver.TCPServer(("0.0.0.0", PORT), AcmeChallengeDispatcher) as httpd:
+    with socketserver.TCPServer(("", PORT), AcmeChallengeDispatcher) as httpd:
         logger.info(f"Serving on port {PORT} with label selector '{LABEL_SELECTOR}'")
         httpd.serve_forever()
