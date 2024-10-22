@@ -70,7 +70,7 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             self.handle_missing_token_or_host()
             return
 
-        if token in self.acme_clients_cache:
+        if token in AcmeChallengeDispatcher.acme_clients_cache:
             self.handle_cached_token(host, token)
         else:
             self.handle_new_token(host, token)
@@ -83,7 +83,7 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             response = self.send_request_to_acme_client(client_ip, token, host)
             if response and response.status_code == 200:
                 logger.debug(f"ACME client {client_ip} returned 200 and response {response.content} for token {token}. Adding {client_ip} to cache")
-                self.api_clients_cache[token] = client_ip
+                AcmeChallengeDispatcher.acme_clients_cache[token] = client_ip
                 self.send_success(response, token, client_ip)
                 logger.info(
                     f"Successfully returned response for token {token} from ACME client {client_ip}. Added {client_ip} to cache")
@@ -93,14 +93,14 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         self.send_404()
 
     def handle_cached_token(self, host, token):
-        client_ip = self.acme_clients_cache[token]
+        client_ip = AcmeChallengeDispatcher.acme_clients_cache[token]
         logger.info(f"Found ACME client with IP {client_ip} in cache for token {token}")
         response = self.send_request_to_acme_client(client_ip, token, host)
         if response and response.status_code == 200:
             self.send_success(response, token, client_ip)
             logger.info(f"Successfully returned response for token {token} from ACME client {client_ip}")
         else:
-            self.acme_clients_cache.pop(token)
+            AcmeChallengeDispatcher.acme_clients_cache.pop(token)
             error_message = f"ACME client '{client_ip}' did not return 200 for token {token}: {response.status_code if response else 'No response'}. Removed {client_ip} from cache"
             logger.error(error_message)
             self.send_404()
@@ -151,7 +151,7 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         return [pod.status.pod_ip for pod in pods.items]
 
     def send_success(self, response, token, client_ip):
-        self.acme_clients_cache[token] = client_ip
+        AcmeChallengeDispatcher.acme_clients_cache[token] = client_ip
         self.send_response(200)
         self.end_headers()
         self.wfile.write(response.content)
