@@ -7,7 +7,7 @@ import traceback
 
 import requests
 
-from k8s_utils import get_api_client
+from k8s_utils import get_core_v1_client
 
 PORT = 8080
 LABEL_SELECTOR = os.getenv('LABEL_SELECTOR', 'app=acme-challenge-dispatcher')
@@ -159,7 +159,7 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
 
     def get_api_client(self):
         if AcmeChallengeDispatcher.api_client is None:
-            AcmeChallengeDispatcher.api_client = get_api_client(logger)
+            AcmeChallengeDispatcher.api_client = get_core_v1_client(logger)
         return AcmeChallengeDispatcher.api_client
 
     def handle_health_request(self):
