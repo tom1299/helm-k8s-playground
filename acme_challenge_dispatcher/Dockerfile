@@ -23,7 +23,7 @@ WORKDIR /app
 COPY *.py /app/
 
 RUN apk update && apk upgrade && \
-    addgroup -S acme-user && adduser -S -G acme-user -H -s /sbin/nologin acme-user && \
+    addgroup -S -g 10001 acme-user && adduser -S -u 10001 -G acme-user -H -s /sbin/nologin acme-user && \
     chown -R acme-user:acme-user /app && \
     apk del ca-certificates apk-tools && \
     rm -rf /usr/lib/python3.12/site-packages/pip* /usr/bin/pip*
