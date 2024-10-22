@@ -5,8 +5,15 @@ metadata:
 spec:
   containers:
   - name: acme-challenge-dispatcher
-    image: localhost/acme-challange-dispatcher:v2
+    image: localhost/acme-challange-dispatcher:v4
     imagePullPolicy: IfNotPresent
+    env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: LABEL_SELECTOR
+      value: app=acme-http-solver
     ports:
     - containerPort: 8080
       name: http
@@ -38,7 +45,7 @@ spec:
       periodSeconds: 5
   restartPolicy: Always
   automountServiceAccountToken: true
-  serviceAccountName: default
+  serviceAccountName: acme-challenge-dispatcher
   securityContext:
     runAsNonRoot: true
     runAsUser: 10001

@@ -11,6 +11,7 @@ from k8s_utils import get_api_client
 
 PORT = 8080
 LABEL_SELECTOR = os.getenv('LABEL_SELECTOR', 'app=acme-challenge-dispatcher')
+NAMESPACE = os.getenv('POD_NAMESPACE')
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
@@ -142,7 +143,7 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
 
     def get_acme_clients(self):
         v1 = self.get_api_client()
-        pods = v1.list_namespaced_pod(namespace='wlan', label_selector=LABEL_SELECTOR)
+        pods = v1.list_namespaced_pod(namespace=NAMESPACE, label_selector=LABEL_SELECTOR)
         if not pods:
             logger.info(f"No pods found with label selector '{LABEL_SELECTOR}'")
             return []

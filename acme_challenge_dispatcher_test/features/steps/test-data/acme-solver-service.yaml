@@ -4,7 +4,7 @@ metadata:
   name: acme-solver-service
 spec:
   selector:
-    app: acme-solver
+    app: acme-http-solver
   ports:
   - port: 8089
     targetPort: 8089
