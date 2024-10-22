@@ -13,7 +13,7 @@ PORT = 8080
 LABEL_SELECTOR = os.getenv('LABEL_SELECTOR', 'app=acme-challenge-dispatcher')
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class JSONFormatter(logging.Formatter):
@@ -30,6 +30,7 @@ class JSONFormatter(logging.Formatter):
 
 handler = logging.StreamHandler()
 handler.setFormatter(JSONFormatter())
+logger.propagate = False
 logger.addHandler(handler)
 
 class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
@@ -40,6 +41,15 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
 
     def __init__(self):
         pass
+
+    def __init__(self, request, client_address, server):
+        if request is None:
+            return
+        super().__init__(request, client_address, server)
+
+    @classmethod
+    def create_without_server(cls):
+        return AcmeChallengeDispatcher(None, None, None)
 
     def do_GET(self):
         logger.info(f"Received request: {self.path}, Headers: {self.headers}")
@@ -147,9 +157,9 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         logger.info(f"Successfully wrote response {response.content} for token {token} from ACME client {client_ip}")
 
     def get_api_client(self):
-        if self.api_client is None:
-            self.api_client = get_api_client(logger)
-        return self.api_client
+        if AcmeChallengeDispatcher.api_client is None:
+            AcmeChallengeDispatcher.api_client = get_api_client(logger)
+        return AcmeChallengeDispatcher.api_client
 
     def handle_health_request(self):
         try:

@@ -1,13 +1,15 @@
 import requests
 import unittest
-import acme_challenge_dispatcher
+from acme_challenge_dispatcher import AcmeChallengeDispatcher
 
 from unittest.mock import MagicMock, patch
 
 class TestAcmeChallengeDispatcher(unittest.TestCase):
 
     def setUp(self):
-        self.dispatcher = acme_challenge_dispatcher.AcmeChallengeDispatcher()
+        self.dispatcher = AcmeChallengeDispatcher.create_without_server()
+        AcmeChallengeDispatcher.api_client = None
+        AcmeChallengeDispatcher.acme_clients_cache = {}
 
     def test_extract_token_valid_path(self):
         path = '/.well-known/acme-challenge/JHb54aT_KTXBWQOzGYkt9A'
