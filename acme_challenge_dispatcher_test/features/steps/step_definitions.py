@@ -37,36 +37,36 @@ def check_namespace_exists(context, namespace):
 @step('I deploy an acme solver pod with the following parameters')
 def deploy_acme_solver_pod(context):
     script_dir = os.path.dirname(__file__)
-    full_file_path = script_dir + "/test-data/acme-solver-pod-template.yaml"
+    full_file_path = os.path.join(script_dir, "test-data", "acme-solver-pod-template.yaml")
 
-    table = context.table
-    name = table[0]['name']
-    port = int(table[0]['port'])
-    token = table[0]['token']
-    key = table[0]['key']
-    domain = table[0]['domain']
+    for row in context.table:
+        name = row['name']
+        port = int(row['port'])
+        token = row['token']
+        key = row['key']
+        domain = row['domain']
 
-    if not does_pod_exist(context.api_client, name, context.namespace):
-        with open(full_file_path) as f:
-            pod_template = yaml.safe_load(f)
+        if not does_pod_exist(context.api_client, name, context.namespace):
+            with open(full_file_path) as f:
+                pod_template = yaml.safe_load(f)
 
-        pod_template['metadata']['name'] = name
+            pod_template['metadata']['name'] = name
 
-        # Update the container args and port
-        container = pod_template['spec']['containers'][0]
-        container['args'] = [
-            f'--listen-port={port}',
-            f'--domain={domain}',
-            f'--token={token}',
-            f'--key={key}'
-        ]
-        container['ports'][0]['containerPort'] = port
+            # Update the container args and port
+            container = pod_template['spec']['containers'][0]
+            container['args'] = [
+                f'--listen-port={port}',
+                f'--domain={domain}',
+                f'--token={token}',
+                f'--key={key}'
+            ]
+            container['ports'][0]['containerPort'] = port
 
-        v1 = context.api_client
-        delete_pod_if_exists(v1, name, context.namespace)
-        v1.create_namespaced_pod(namespace=context.namespace, body=pod_template)
+            v1 = context.api_client
+            delete_pod_if_exists(v1, name, context.namespace)
+            v1.create_namespaced_pod(namespace=context.namespace, body=pod_template)
 
-        is_pod_running_and_ready(v1, context.namespace, name)
+            is_pod_running_and_ready(v1, context.namespace, name)
 
 @step('I forward the port {pod_port:d} of the pod "{pod_name}" to port {host_port:d}')
 def forward_port(context, pod_port, pod_name, host_port):
@@ -166,10 +166,16 @@ def do_get_request(context, num_requests, port):
         context.requests.append(response)
 
 @step('response number {response_number:d} should have return code {expected_code:d} and content "{expected_content}"')
-def check_response(context, response_number, expected_code, expected_content):
-    response = context.requests[response_number - 1]  # Adjust for 0-based index
-    assert response.status_code == expected_code, f"Expected status code {expected_code}, but got {response.status_code}"
-    assert response.text == expected_content, f"Expected content '{expected_content}', but got '{response.text}'"
+@step('all responses should have return code {expected_code:d} and content "{expected_content}"')
+def check_response(context, response_number=None, expected_code=None, expected_content=None):
+    if response_number is not None:
+        response = context.requests[response_number - 1]  # Adjust for 0-based index
+        assert response.status_code == expected_code, f"Expected status code {expected_code}, but got {response.status_code}"
+        assert response.text == expected_content, f"Expected content '{expected_content}', but got '{response.text}'"
+    else:
+        for response in context.requests:
+            assert response.status_code == expected_code, f"Expected status code {expected_code}, but got {response.status_code}"
+            assert response.text == expected_content, f"Expected content '{expected_content}', but got '{response.text}'"
 
 @step('I delete the pods')
 def delete_pods(context):

@@ -16,7 +16,7 @@ NAMESPACE = os.getenv('POD_NAMESPACE')
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(os.getenv('LOG_LEVEL', 'INFO'))
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
@@ -63,9 +63,8 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             self.handle_non_challenge_request()
             return
 
-        token = self.extract_token(self.path)
+        token = self.extract_token()
         host = self.headers.get('Host')
-        logger.info(f"Token: {token}, Host: {host}")
 
         logger.info(f"Current cache content: {AcmeChallengeDispatcher.acme_clients_cache}")
 
@@ -118,21 +117,21 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         logger.error(f"Token or host missing in request: {self.path}, Headers: {self.headers}")
         self.send_response(400)
         self.end_headers()
-        error_message = "400 Bad Request: Token and host are required"
+        error_message = "400 Bad Request"
         self.wfile.write(error_message.encode())
 
     def handle_non_challenge_request(self):
         self.send_response(404)
         self.end_headers()
-        error_message = f"404 Not Found: Invalid path '{self.path}'"
+        error_message = f"404 Not Found"
         logger.error(f"Invalid path: {self.path}")
         self.wfile.write(error_message.encode())
 
-    def extract_token(self, path):
-        if not path:
+    def extract_token(self):
+        if not self.path:
             logger.error("No path provided to extract token from")
             return ''
-        return path.split('/')[-1]
+        return self.path.split('/')[-1]
 
     def send_request_to_acme_client(self, client_ip, token, host):
         url = f'http://{client_ip}:8080/.well-known/acme-challenge/{token}'
@@ -171,16 +170,13 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             if acme_clients is not None:
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(b"Connection to api server is healthy")
-                logger.info(f"Cluster connection is healthy, ACME clients: {acme_clients}")
+                logger.debug(f"Cluster connection is healthy, ACME clients: {acme_clients}")
             else:
                 raise Exception("No ACME clients found")
         except Exception as e:
             logger.error(f"Cluster connection is not healthy: {str(e)}\n{traceback.format_exc()}")
             self.send_response(500)
             self.end_headers()
-            error_message = f"Connection to api server is not healthy: {str(e)}"
-            self.wfile.write(error_message.encode())
 
 def run_server():
     server_address = ('', PORT)

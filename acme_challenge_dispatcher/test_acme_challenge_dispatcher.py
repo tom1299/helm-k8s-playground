@@ -12,39 +12,39 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
         AcmeChallengeDispatcher.acme_clients_cache = {}
 
     def test_extract_token_valid_path(self):
-        path = '/.well-known/acme-challenge/JHb54aT_KTXBWQOzGYkt9A'
+        self.dispatcher.path = '/.well-known/acme-challenge/JHb54aT_KTXBWQOzGYkt9A'
         expected_token = 'JHb54aT_KTXBWQOzGYkt9A'
-        token = self.dispatcher.extract_token(path)
+        token = self.dispatcher.extract_token()
         self.assertEqual(token, expected_token)
 
     def test_extract_token_empty_path(self):
-        path = ''
+        self.dispatcher.path = ''
         expected_token = ''
-        token = self.dispatcher.extract_token(path)
+        token = self.dispatcher.extract_token()
         self.assertEqual(token, expected_token)
 
     def test_extract_token_no_token(self):
-        path = '/.well-known/acme-challenge/'
+        self.dispatcher.path = '/.well-known/acme-challenge/'
         expected_token = ''
-        token = self.dispatcher.extract_token(path)
+        token = self.dispatcher.extract_token()
         self.assertEqual(token, expected_token)
 
     def test_extract_token_no_acme_challenge(self):
-        path = '/some/other/path'
+        self.dispatcher.path = '/some/other/path'
         expected_token = 'path'
-        token = self.dispatcher.extract_token(path)
+        token = self.dispatcher.extract_token()
         self.assertEqual(token, expected_token)
 
     def test_extract_token_special_characters(self):
-        path = '/.well-known/acme-challenge/token-with-special-characters-!@#$%^&*()'
+        self.dispatcher.path = '/.well-known/acme-challenge/token-with-special-characters-!@#$%^&*()'
         expected_token = 'token-with-special-characters-!@#$%^&*()'
-        token = self.dispatcher.extract_token(path)
+        token = self.dispatcher.extract_token()
         self.assertEqual(token, expected_token)
 
     def test_extract_token_none_path(self):
-        path = None
+        self.dispatcher.path = None
         expected_token = ''
-        token = self.dispatcher.extract_token(path)
+        token = self.dispatcher.extract_token()
         self.assertEqual(token, expected_token)
 
     @patch('requests.get')
@@ -74,7 +74,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
 
         self.assertIsNone(response)
 
-    @patch('acme_challenge_dispatcher.get_api_client')
+    @patch('acme_challenge_dispatcher.AcmeChallengeDispatcher.get_api_client')
     def test_get_acme_clients_with_pods(self, mock_get_api_client):
         mock_v1 = MagicMock()
         mock_get_api_client.return_value = mock_v1
@@ -86,7 +86,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
         acme_clients = self.dispatcher.get_acme_clients()
         self.assertEqual(acme_clients, ['192.168.1.1', '192.168.1.2'])
 
-    @patch('acme_challenge_dispatcher.get_api_client')
+    @patch('acme_challenge_dispatcher.AcmeChallengeDispatcher.get_api_client')
     def test_get_acme_clients_with_no_pods(self, mock_get_api_client):
         mock_v1 = MagicMock()
         mock_get_api_client.return_value = mock_v1
@@ -95,7 +95,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
         acme_clients = self.dispatcher.get_acme_clients()
         self.assertEqual(acme_clients, [])
 
-    @patch('acme_challenge_dispatcher.get_api_client')
+    @patch('acme_challenge_dispatcher.AcmeChallengeDispatcher.get_api_client')
     def test_get_acme_clients_with_none(self, mock_get_api_client):
         mock_v1 = MagicMock()
         mock_get_api_client.return_value = mock_v1
