@@ -35,14 +35,14 @@ handler.setFormatter(JSONFormatter())
 logger.propagate = False
 logger.addHandler(handler)
 
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+
 class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
 
     acme_clients_cache = {}
 
     api_client = None
-
-    def __init__(self):
-        pass
 
     def __init__(self, request, client_address, server):
         if request is None:
@@ -59,7 +59,8 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         if self.path == '/healthz':
             self.handle_health_request()
             return
-        elif not self.path.startswith('/.well-known/acme-challenge/'):
+
+        if self.path.startswith('/.well-known/acme-challenge/'):
             self.handle_non_challenge_request()
             return
 
@@ -181,9 +182,9 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
 def run_server():
     server_address = ('', PORT)
     httpd = http.server.HTTPServer(server_address, AcmeChallengeDispatcher)
-    logger.info(f"Serving on port {PORT} with label selector '{LABEL_SELECTOR}'")
+    logger.info("Serving on port %s with label selector '%s'", PORT, LABEL_SELECTOR)
 
-    def gracefully_shutdown_hook(signum, frame):
+    def gracefully_shutdown_hook(signum, frame): # pylint: disable=unused-argument
         thread = threading.Thread(target=httpd.shutdown)
         thread.start()
 
