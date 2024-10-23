@@ -27,3 +27,13 @@ It receives acme challenges in the form of HTTP requests and forwards them to th
 * The implementation of extracting the token and host header from the request should be in own functions
 * The implementation of sending the request to the acme clients should be in own function
 * The implementation of getting the acme clients from the kubernetes API should be in own function
+
+## Building
+```
+kind delete cluster
+kind create cluster --config ../acme_challenge_dispatcher_test/kind.yaml
+podman build --tag acme-challenge-dispatcher:<version> .
+rm *.tar
+podman save -o acme-challenge-dispatcher.tar acme-challenge-dispatcher:<version>
+kind load image-archive acme-challenge-dispatcher.tar
+```

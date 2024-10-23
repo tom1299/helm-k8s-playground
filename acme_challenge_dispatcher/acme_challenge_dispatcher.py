@@ -35,8 +35,6 @@ handler.setFormatter(JSONFormatter())
 logger.propagate = False
 logger.addHandler(handler)
 
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-
 
 class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
 
@@ -52,6 +50,10 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
     @classmethod
     def create_without_server(cls):
         return AcmeChallengeDispatcher(None, None, None)
+
+    def log_message(self, format, *args):
+        logger.debug(format % args)
+        pass
 
     def do_GET(self):
         logger.info("Received request: %s, Headers: %s", self.path, self.headers)
