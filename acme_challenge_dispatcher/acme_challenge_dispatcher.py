@@ -16,7 +16,7 @@ NAMESPACE = os.getenv('POD_NAMESPACE')
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
@@ -67,6 +67,8 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         host = self.headers.get('Host')
         logger.info(f"Token: {token}, Host: {host}")
 
+        logger.info(f"Current cache content: {AcmeChallengeDispatcher.acme_clients_cache}")
+
         if not token or not host:
             self.handle_missing_token_or_host()
             return
@@ -77,7 +79,7 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             self.handle_new_token(host, token)
 
     def handle_new_token(self, host, token):
-        logger.debug(f"Request of new token {token} for host {host} received")
+        logger.debug(f"Request for new token {token} for host {host} received")
         acme_clients = self.get_acme_clients()
         for client_ip in acme_clients:
             logger.debug(f"Trying ACME client with ip {client_ip} and token {token}")
@@ -113,10 +115,10 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(error_message.encode())
 
     def handle_missing_token_or_host(self):
+        logger.error(f"Token or host missing in request: {self.path}, Headers: {self.headers}")
         self.send_response(400)
         self.end_headers()
         error_message = "400 Bad Request: Token and host are required"
-        logger.error("Token and / or host missing")
         self.wfile.write(error_message.encode())
 
     def handle_non_challenge_request(self):

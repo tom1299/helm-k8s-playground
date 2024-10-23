@@ -159,9 +159,7 @@ def do_get_request(context, num_requests, port):
     url = f"http://localhost:{port}{params['url']}"
     headers = {'Host': params['host']}
 
-    # Ensure the requests list exists in the context
-    if not hasattr(context, 'requests'):
-        context.requests = []
+    context.requests = []
 
     for _ in range(num_requests):
         response = requests.get(url, headers=headers)
