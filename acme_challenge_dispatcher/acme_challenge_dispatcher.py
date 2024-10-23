@@ -54,20 +54,20 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         return AcmeChallengeDispatcher(None, None, None)
 
     def do_GET(self):
-        logger.info(f"Received request: {self.path}, Headers: {self.headers}")
+        logger.info("Received request: %s, Headers: %s", self.path, self.headers)
 
         if self.path == '/healthz':
             self.handle_health_request()
             return
 
-        if self.path.startswith('/.well-known/acme-challenge/'):
+        if not self.path.startswith('/.well-known/acme-challenge/'):
             self.handle_non_challenge_request()
             return
 
         token = self.extract_token()
         host = self.headers.get('Host')
 
-        logger.info(f"Current cache content: {AcmeChallengeDispatcher.acme_clients_cache}")
+        logger.info("Current cache content: %s", AcmeChallengeDispatcher.acme_clients_cache)
 
         if not token or not host:
             self.handle_missing_token_or_host()
@@ -79,33 +79,34 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             self.handle_new_token(host, token)
 
     def handle_new_token(self, host, token):
-        logger.debug(f"Request for new token {token} for host {host} received")
+        logger.debug("Request for new token %s for host %s received", token, host)
         acme_clients = self.get_acme_clients()
         for client_ip in acme_clients:
-            logger.debug(f"Trying ACME client with ip {client_ip} and token {token}")
+            logger.debug("Trying ACME client with ip %s and token %s", client_ip, token)
             response = self.send_request_to_acme_client(client_ip, token, host)
             if response and response.status_code == 200:
-                logger.debug(f"ACME client {client_ip} returned 200 and response {response.content} for token {token}. Adding {client_ip} to cache")
+                logger.debug("ACME client %s returned 200 and response %s for token %s. Adding %s to cache",
+                             client_ip, response.content, token, client_ip)
                 AcmeChallengeDispatcher.acme_clients_cache[token] = client_ip
                 self.send_success(response, token, client_ip)
-                logger.info(
-                    f"Successfully returned response for token {token} from ACME client {client_ip}. Added {client_ip} to cache")
+                logger.info("Successfully returned response for token %s from ACME client %s. Added %s to cache",
+                            token, client_ip, client_ip)
                 return
 
-        logger.error(f"None of the ACME clients returned 200 for token {token}. Returning 404")
+        logger.error("None of the ACME clients returned 200 for token %s. Returning 404", token)
         self.send_404()
 
     def handle_cached_token(self, host, token):
         client_ip = AcmeChallengeDispatcher.acme_clients_cache[token]
-        logger.info(f"Found ACME client with IP {client_ip} in cache for token {token}")
+        logger.info("Found ACME client with IP %s in cache for token %s", client_ip, token)
         response = self.send_request_to_acme_client(client_ip, token, host)
         if response and response.status_code == 200:
             self.send_success(response, token, client_ip)
-            logger.info(f"Successfully returned response for token {token} from ACME client {client_ip}")
+            logger.info("Successfully returned response for token %s from ACME client %s", token, client_ip)
         else:
             AcmeChallengeDispatcher.acme_clients_cache.pop(token)
-            error_message = f"ACME client '{client_ip}' did not return 200 for token {token}: {response.status_code if response else 'No response'}. Removed {client_ip} from cache"
-            logger.error(error_message)
+            logger.error("ACME client '%s' did not return 200 for token %s: %s. Removed %s from cache",
+                         client_ip, token, response.status_code if response else 'No response', client_ip)
             self.send_404()
 
     def send_404(self):
@@ -115,7 +116,7 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(error_message.encode())
 
     def handle_missing_token_or_host(self):
-        logger.error(f"Token or host missing in request: {self.path}, Headers: {self.headers}")
+        logger.error("Token or host missing in request: %s, Headers: %s", self.path, self.headers)
         self.send_response(400)
         self.end_headers()
         error_message = "400 Bad Request"
@@ -124,8 +125,8 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
     def handle_non_challenge_request(self):
         self.send_response(404)
         self.end_headers()
-        error_message = f"404 Not Found"
-        logger.error(f"Invalid path: {self.path}")
+        error_message = "404 Not Found"
+        logger.error("Invalid path: %s", self.path)
         self.wfile.write(error_message.encode())
 
     def extract_token(self):
@@ -135,22 +136,23 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         return self.path.split('/')[-1]
 
     def send_request_to_acme_client(self, client_ip, token, host):
-        url = f'http://{client_ip}:8080/.well-known/acme-challenge/{token}'
+        url = f"http://{client_ip}:8080/.well-known/acme-challenge/{token}"
         headers = {'Host': host}
         try:
             response = requests.get(url, headers=headers, timeout=1)
             return response
         except requests.RequestException as e:
-            logger.error(f"Error while sending request to ACME client {client_ip}: {str(e)}\n{traceback.format_exc()}")
+            logger.error("Error while sending request to ACME client %s: %s\n%s",
+                         client_ip, str(e), traceback.format_exc())
             return None
 
     def get_acme_clients(self):
         v1 = self.get_api_client()
         pods = v1.list_namespaced_pod(namespace=NAMESPACE, label_selector=LABEL_SELECTOR)
         if not pods:
-            logger.info(f"No pods found with label selector '{LABEL_SELECTOR}'")
+            logger.info("No pods found with label selector '%s'", LABEL_SELECTOR)
             return []
-        logger.info(f"Found {len(pods.items)} pods with label selector '{LABEL_SELECTOR}'")
+        logger.info("Found %d pods with label selector '%s'", len(pods.items), LABEL_SELECTOR)
         return [pod.status.pod_ip for pod in pods.items]
 
     def send_success(self, response, token, client_ip):
@@ -158,7 +160,8 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
         self.wfile.write(response.content)
-        logger.info(f"Successfully wrote response {response.content} for token {token} from ACME client {client_ip}")
+        logger.info("Successfully wrote response %s for token %s from ACME client %s", response.content,
+                    token, client_ip)
 
     def get_api_client(self):
         if AcmeChallengeDispatcher.api_client is None:
@@ -171,11 +174,13 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             if acme_clients is not None:
                 self.send_response(200)
                 self.end_headers()
-                logger.debug(f"Cluster connection is healthy, ACME clients: {acme_clients}")
+                logger.debug("Cluster connection is healthy, ACME clients: %s", acme_clients)
             else:
-                raise Exception("No ACME clients found")
-        except Exception as e:
-            logger.error(f"Cluster connection is not healthy: {str(e)}\n{traceback.format_exc()}")
+                logger.error("Cluster connection is not healthy, no ACME clients found")
+                self.send_response(500)
+                self.end_headers()
+        except Exception as e: # pylint: disable=broad-except
+            logger.error("Cluster connection is not healthy: %s\n%s", str(e), traceback.format_exc())
             self.send_response(500)
             self.end_headers()
 

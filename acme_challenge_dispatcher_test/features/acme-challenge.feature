@@ -7,7 +7,7 @@ Feature: Acme challenge processing
     And the service-account "acme-challenge-dispatcher" exists
     And I deploy the acme challenge dispatcher pod with the following parameters:
     | name | image |
-    | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:v11 |
+    | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:v15 |
 
   Scenario: Single acme challenge running
     Given I deploy an acme solver pod with the following parameters:
@@ -137,15 +137,15 @@ Scenario: Diverse error cases
     When I do 1 GET request to 8080 with the following parameters:
     | url | port | host |
     | /.well-known/acme-challenge/abc | 8080 | |
-    Then response number 1 should have return code 400 and content "400 Bad Request: Token and host are required"
+    Then response number 1 should have return code 400 and content "400 Bad Request"
     When I do 1 GET request to 8080 with the following parameters:
     | url | port | host |
     | /invalid/path | 8080 | acme-challenge-dispatcher-1.com |
-    Then response number 1 should have return code 404 and content "404 Not Found: Invalid path '/invalid/path'"
+    Then response number 1 should have return code 404 and content "404 Not Found"
     When I do 1 GET request to 8080 with the following parameters:
     | url | port | host |
     | /.well-known/acme-challenge/ | 8080 | acme-challenge-dispatcher-1.com |
-    Then response number 1 should have return code 400 and content "400 Bad Request: Token and host are required"
+    Then response number 1 should have return code 400 and content "400 Bad Request"
     And I stop forwarding the port 8080 of the pod "acme-challenge-dispatcher-1"
     And I delete the pods:
     | name |

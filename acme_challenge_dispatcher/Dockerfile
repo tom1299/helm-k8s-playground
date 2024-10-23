@@ -9,7 +9,7 @@ RUN mkdir /app
 
 WORKDIR /app
 
-COPY *.py /app/
+COPY k8s_utils.py acme_challenge_dispatcher.py /app/
 
 RUN python -m pip uninstall --root-user-action=ignore -y pip && \
     apk --purge del apk-tools && \
