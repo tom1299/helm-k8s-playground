@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: acme-challenge-dispatcher
+  labels:
+    app: acme-challenge-dispatcher
 spec:
   containers:
   - name: acme-challenge-dispatcher

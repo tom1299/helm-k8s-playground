@@ -153,18 +153,35 @@ def stop_forwarding_port(context, pod_port, pod_name):
     else:
         print(f"No port forwarding process found for pod '{pod_name}' on port {pod_port}")
 
-@step('I do a GET request to {port:d} with the following parameters')
-def do_get_request(context, port):
+@step('I do {num_requests:d} GET request to {port:d} with the following parameters')
+def do_get_request(context, num_requests, port):
     params = context.table[0]
     url = f"http://localhost:{port}{params['url']}"
     headers = {'Host': params['host']}
 
-    response = requests.get(url, headers=headers)
-    context.response = response
+    # Ensure the requests list exists in the context
+    if not hasattr(context, 'requests'):
+        context.requests = []
 
-@step('the response should be "{expected_response}"')
-def check_response(context, expected_response):
-    assert context.response.text == expected_response, f"Expected '{expected_response}', but got '{context.response.text}'"
+    for _ in range(num_requests):
+        response = requests.get(url, headers=headers)
+        context.requests.append(response)
+
+@step('response number {response_number:d} should have return code {expected_code:d} and content "{expected_content}"')
+def check_response(context, response_number, expected_code, expected_content):
+    response = context.requests[response_number - 1]  # Adjust for 0-based index
+    assert response.status_code == expected_code, f"Expected status code {expected_code}, but got {response.status_code}"
+    assert response.text == expected_content, f"Expected content '{expected_content}', but got '{response.text}'"
+
+@step('I delete the pods')
+def delete_pods(context):
+    namespace = context.namespace
+    v1 = context.api_client
+
+    for row in context.table:
+        pod_name = row['name']
+        delete_pod_if_exists(v1, pod_name, namespace)
+        print(f"Pod '{pod_name}' deleted in namespace '{namespace}'")
 
 def delete_pod(v1, pod_name, namespace):
     return v1.delete_namespaced_pod(name=pod_name, namespace=namespace)
@@ -176,7 +193,7 @@ def delete_pod_if_exists(v1, pod_name, namespace):
     while True:
         try:
             run()
-            sleep(0.2)
+            sleep(0.5)
         except client.rest.ApiException as e:
             has_deleted = json.loads(e.body)['code'] == 404
             if has_deleted:
