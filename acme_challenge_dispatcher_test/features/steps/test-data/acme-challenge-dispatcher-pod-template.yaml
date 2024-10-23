@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: acme-challenge-dispatcher
-    image: localhost/acme-challange-dispatcher:v4
+    image: localhost/acme-challange-dispatcher:v8
     imagePullPolicy: IfNotPresent
     env:
     - name: POD_NAMESPACE

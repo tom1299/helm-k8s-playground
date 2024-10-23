@@ -1,8 +1,9 @@
 import os
 import http.server
-import socketserver
 import logging
 import json
+import signal
+import threading
 import traceback
 
 import requests
@@ -179,7 +180,19 @@ class AcmeChallengeDispatcher(http.server.SimpleHTTPRequestHandler):
             error_message = f"Connection to api server is not healthy: {str(e)}"
             self.wfile.write(error_message.encode())
 
+def run_server():
+    server_address = ('', PORT)
+    httpd = http.server.HTTPServer(server_address, AcmeChallengeDispatcher)
+    logger.info(f"Serving on port {PORT} with label selector '{LABEL_SELECTOR}'")
+
+    def gracefully_shutdown_hook(signum, frame):
+        thread = threading.Thread(target=httpd.shutdown)
+        thread.start()
+
+    signal.signal(signal.SIGTERM, gracefully_shutdown_hook)
+
+    httpd.serve_forever()
+
+
 if __name__ == '__main__':
-    with socketserver.TCPServer(("", PORT), AcmeChallengeDispatcher) as httpd:
-        logger.info(f"Serving on port {PORT} with label selector '{LABEL_SELECTOR}'")
-        httpd.serve_forever()
+    run_server()
