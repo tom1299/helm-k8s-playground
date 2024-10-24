@@ -18,7 +18,10 @@ spec:
       value: app=acme-http-solver
     ports:
     - containerPort: 8080
-      name: http
+      name: challenges
+      protocol: TCP
+    - containerPort: 8081
+      name: healthz
       protocol: TCP
     resources:
       limits:
@@ -36,15 +39,15 @@ spec:
     livenessProbe:
       httpGet:
         path: /healthz
-        port: 8080
+        port: healthz
       initialDelaySeconds: 30
-      periodSeconds: 10
+      periodSeconds: 30
     readinessProbe:
       httpGet:
         path: /healthz
-        port: 8080
-      initialDelaySeconds: 10
-      periodSeconds: 5
+        port: healthz
+      initialDelaySeconds: 2
+      periodSeconds: 30
   restartPolicy: Always
   automountServiceAccountToken: true
   serviceAccountName: acme-challenge-dispatcher
