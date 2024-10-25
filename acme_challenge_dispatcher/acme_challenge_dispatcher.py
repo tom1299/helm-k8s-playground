@@ -51,7 +51,14 @@ def get_acme_clients():
         logger.info("No pods found with label selector '%s'", LABEL_SELECTOR)
         return []
     logger.info("Found %d pods with label selector '%s'", len(pods.items), LABEL_SELECTOR)
-    return [pod.status.pod_ip for pod in pods.items]
+    acme_clients = []
+    for pod in pods.items:
+        if pod.status.pod_ip:
+            logger.debug("Found pod '%s' with ip '%s'", pod.metadata.name, pod.status.pod_ip)
+            acme_clients.append(pod.status.pod_ip)
+        else:
+            logger.warning("Pod '%s' does not have an ip (yet)'", pod.metadata.name, pod.status.pod_ip)
+    return acme_clients
 
 
 class HealthHandler(http.server.SimpleHTTPRequestHandler):

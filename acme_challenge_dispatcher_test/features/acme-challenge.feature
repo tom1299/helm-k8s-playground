@@ -7,7 +7,7 @@ Feature: Acme challenge processing
     And the service-account "acme-challenge-dispatcher" exists
     And I deploy the acme challenge dispatcher pod with the following parameters
     | name | image |
-    | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:v22 |
+    | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:v23 |
 
   Scenario: Single acme challenge running
     Given I deploy an acme solver pod with the following parameters
