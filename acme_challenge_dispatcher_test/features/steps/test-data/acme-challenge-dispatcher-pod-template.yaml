@@ -17,7 +17,7 @@ spec:
     - name: LABEL_SELECTOR
       value: app=acme-http-solver
     ports:
-    - containerPort: 8080
+    - containerPort: 8089
       name: challenges
       protocol: TCP
     - containerPort: 8081

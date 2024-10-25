@@ -4,7 +4,6 @@ import logging
 import json
 import signal
 import socketserver
-import sys
 import threading
 import time
 import traceback
@@ -18,7 +17,7 @@ NAMESPACE = os.getenv('POD_NAMESPACE')
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('LOG_LEVEL', 'INFO'))
+logger.setLevel(os.getenv('LOG_LEVEL', 'DEBUG'))
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
@@ -191,7 +190,7 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
         return self.path.split('/')[-1]
 
     def send_request_to_acme_client(self, client_ip, token, host):
-        url = f"http://{client_ip}:8080/.well-known/acme-challenge/{token}"
+        url = f"http://{client_ip}:8089/.well-known/acme-challenge/{token}"
         headers = {'Host': host, 'User-Agent': 'acme-challenge-dispatcher'}
         try:
             response = requests.get(url, headers=headers, timeout=1)
@@ -217,7 +216,7 @@ def run_server():
     health_server = ThreadingHTTPServer(("0.0.0.0", 8081), HealthHandler)
 
     logger.info("Serving acme challenges on port 8080 with label selector '%s'", LABEL_SELECTOR)
-    challenge_server = ThreadingHTTPServer(("0.0.0.0", 8080), ChallengeHandler)
+    challenge_server = ThreadingHTTPServer(("0.0.0.0", 8089), ChallengeHandler)
 
     def gracefully_shutdown_hook(signum, frame): # pylint: disable=unused-argument
         thread = threading.Thread(target=health_server.shutdown)
