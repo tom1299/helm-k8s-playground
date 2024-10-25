@@ -6,6 +6,7 @@ import signal
 import socketserver
 import sys
 import threading
+import time
 import traceback
 
 import requests
@@ -56,6 +57,9 @@ def get_acme_clients():
 
 class HealthHandler(http.server.SimpleHTTPRequestHandler):
 
+    def log_message(self, format, *args):
+        logger.debug(format % args)
+
     def do_GET(self):
 
         if self.path == '/healthz':
@@ -87,6 +91,8 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
 
     acme_clients_cache = {}
 
+    last_acme_challenge_request_time = 0
+
     def __init__(self, request, client_address, server):
         if request is None:
             return
@@ -98,7 +104,6 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         logger.debug(format % args)
-        pass
 
     def do_GET(self):
         logger.info("Received request: %s, Headers: %s", self.path, self.headers)
@@ -110,16 +115,23 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
         token = self.extract_token()
         host = self.headers.get('Host')
 
-        logger.info("Current cache content: %s", ChallengeHandler.acme_clients_cache)
-
         if not token or not host:
             self.handle_missing_token_or_host()
             return
+
+        logger.info("Current cache content: %s", ChallengeHandler.acme_clients_cache)
+        ChallengeHandler.last_acme_challenge_request_time = time.time()
+        self.clear_cache_if_needed()
 
         if token in ChallengeHandler.acme_clients_cache:
             self.handle_cached_token(host, token)
         else:
             self.handle_new_token(host, token)
+
+    def clear_cache_if_needed(self):
+        if time.time() - ChallengeHandler.last_acme_challenge_request_time > 600:
+            ChallengeHandler.acme_clients_cache.clear()
+            logger.info("Cleared cache as no ACME challenge request was received in last 600 seconds")
 
     def handle_new_token(self, host, token):
         logger.debug("Request for new token %s for host %s received", token, host)

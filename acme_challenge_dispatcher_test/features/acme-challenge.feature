@@ -5,31 +5,31 @@ Feature: Acme challenge processing
     Given I have a connection to the cluster
     And the namespace "acme-challenge-test" exists
     And the service-account "acme-challenge-dispatcher" exists
-    And I deploy the acme challenge dispatcher pod with the following parameters:
+    And I deploy the acme challenge dispatcher pod with the following parameters
     | name | image |
-    | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:v18 |
+    | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:v20 |
 
   Scenario: Single acme challenge running
-    Given I deploy an acme solver pod with the following parameters:
+    Given I deploy an acme solver pod with the following parameters
     | name | port | token | key | domain |
     | acme-solver-1 | 8080 | abc | def | acme-challenge-dispatcher-1.com |
     And I forward the port 8080 of the pod "acme-challenge-dispatcher-1" to port 8080
     # TODO: Replace this step whith something like: And I wait until I can access port 8080
     And I wait for 2 seconds
-    When I do 1 GET request to 8080 with the following parameters:
+    When I do 1 GET request to 8080 with the following parameters
     | url | port | host |
     | /.well-known/acme-challenge/abc | 8080 | acme-challenge-dispatcher-1.com |
     Then response number 1 should have return code 200 and content "def"
-    When I do 1 GET request to 8080 with the following parameters:
+    When I do 1 GET request to 8080 with the following parameters
     | url | port | host |
     | /.well-known/acme-challenge/abc | 8080 | example.com |
     Then response number 1 should have return code 404 and content "404 Not Found"
-    When I do 1 GET request to 8080 with the following parameters:
+    When I do 1 GET request to 8080 with the following parameters
     | url | port | host |
     | /.well-known/acme-challenge/xxxxxxxxxx | 8080 | acme-challenge-dispatcher-1.com |
     Then response number 1 should have return code 404 and content "404 Not Found"
     And I stop forwarding the port 8080 of the pod "acme-challenge-dispatcher-1"
-    And I delete the pods:
+    And I delete the pods
     | name |
     | acme-challenge-dispatcher-1 |
     | acme-solver-1 |
