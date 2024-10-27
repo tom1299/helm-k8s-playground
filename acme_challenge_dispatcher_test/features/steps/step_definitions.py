@@ -66,7 +66,7 @@ def deploy_acme_solver_pod(context):
             delete_pod_if_exists(v1, name, context.namespace)
             v1.create_namespaced_pod(namespace=context.namespace, body=pod_template)
 
-            is_pod_running_and_ready(v1, context.namespace, name)
+            assert is_pod_running_and_ready(v1, context.namespace, name)
 
 @step('I forward the port {pod_port:d} of the pod "{pod_name}" to port {host_port:d}')
 def forward_port(context, pod_port, pod_name, host_port):
@@ -133,7 +133,7 @@ def deploy_acme_challenge_dispatcher_pod(context):
         v1.create_namespaced_pod(namespace=namespace, body=pod_template)
         print(f"Pod '{table[0]['name']}' with image '{table[0]['image']}' created in namespace '{namespace}'")
 
-        is_pod_running_and_ready(v1, namespace, pod_template['metadata']['name'])
+        assert is_pod_running_and_ready(v1, namespace, pod_template['metadata']['name'])
 
 @step('I stop forwarding the port {pod_port:d} of the pod "{pod_name}"')
 def stop_forwarding_port(context, pod_port, pod_name):
