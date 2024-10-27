@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import requests
-import subprocess
 from time import sleep, time
 
 from kubernetes import utils
@@ -18,13 +17,15 @@ logger = logging.getLogger(__name__)
 
 @step('I have a connection to the cluster')
 def step_impl(context):
-    api_client = get_core_v1_client(logger)
-    api_client.list_namespace()
+    api_client = get_api_client(logger)
     context.api_client = api_client
+    v1_client = get_core_v1_client(logger)
+    v1_client.list_namespace()
+    context.v1_client = v1_client
 
 @step('The namespace "{namespace}" exists')
 def check_namespace_exists(context, namespace):
-    v1 = context.api_client
+    v1 = context.v1_client
     namespaces = v1.list_namespace()
     namespace_names = [ns.metadata.name for ns in namespaces.items]
 
@@ -46,7 +47,7 @@ def deploy_acme_solver_pod(context):
         key = row['key']
         domain = row['domain']
 
-        if not does_pod_exist(context.api_client, name, context.namespace):
+        if not does_object_exist(context.v1_client, name, context.namespace, "pod"):
             with open(full_file_path) as f:
                 pod_template = yaml.safe_load(f)
 
@@ -62,39 +63,11 @@ def deploy_acme_solver_pod(context):
             ]
             container['ports'][0]['containerPort'] = port
 
-            v1 = context.api_client
+            v1 = context.v1_client
             delete_pod_if_exists(v1, name, context.namespace)
             v1.create_namespaced_pod(namespace=context.namespace, body=pod_template)
 
             assert is_pod_running_and_ready(v1, context.namespace, name)
-
-@step('I forward the port {pod_port:d} of the pod "{pod_name}" to port {host_port:d}')
-def forward_port(context, pod_port, pod_name, host_port):
-    namespace = context.namespace
-
-    # Ensure the port_forward_processes list exists in the context
-    if not hasattr(context, 'port_forward_processes'):
-        context.port_forward_processes = []
-
-    # Run a loop until the pod is in the state Running
-    v1 = context.api_client
-    while True:
-        pod = v1.read_namespaced_pod(name=pod_name, namespace=namespace)
-        if pod.status.phase == "Running":
-            break
-        sleep(1)
-
-    try:
-        process = subprocess.Popen(
-            ["kubectl", "port-forward", f"pod/{pod_name}", f"{host_port}:{pod_port}", "-n", namespace])
-        context.port_forward_processes.append({'pod_name': pod_name, 'pid': process.pid})
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to forward port: {e}")
-
-
-@step('I wait for {seconds:d} seconds')
-def wait_for_seconds(context, seconds):
-    sleep(seconds)
 
 @step('the service-account "{service_account_name}" exists')
 def step_impl(context, service_account_name):
@@ -102,7 +75,7 @@ def step_impl(context, service_account_name):
     rbac_file_path = os.path.join(os.path.dirname(__file__), 'test-data', 'rbac.yaml')
 
     try:
-        v1 = context.api_client
+        v1 = context.v1_client
         v1.read_namespaced_service_account(name=service_account_name, namespace=namespace)
         logger.info(f"Service account '{service_account_name}' already exists in namespace '{namespace}'")
     except client.exceptions.ApiException as e:
@@ -119,7 +92,7 @@ def deploy_acme_challenge_dispatcher_pod(context):
     namespace = context.namespace
     table = context.table
 
-    if not does_pod_exist(context.api_client, table[0]['name'], namespace):
+    if not does_object_exist(context.v1_client, table[0]['name'], namespace, "pod"):
 
         pod_template_path = os.path.join(os.path.dirname(__file__), 'test-data', 'acme-challenge-dispatcher-pod-template.yaml')
         with open(pod_template_path) as f:
@@ -129,29 +102,29 @@ def deploy_acme_challenge_dispatcher_pod(context):
         pod_template['spec']['containers'][0]['image'] = table[0]['image']
 
         # Create the pod in the specified namespace
-        v1 = context.api_client
+        v1 = context.v1_client
         v1.create_namespaced_pod(namespace=namespace, body=pod_template)
         print(f"Pod '{table[0]['name']}' with image '{table[0]['image']}' created in namespace '{namespace}'")
 
         assert is_pod_running_and_ready(v1, namespace, pod_template['metadata']['name'])
 
-@step('I stop forwarding the port {pod_port:d} of the pod "{pod_name}"')
-def stop_forwarding_port(context, pod_port, pod_name):
-    if not hasattr(context, 'port_forward_processes'):
-        print("No port forwarding processes found in context")
-        return
+    if not does_object_exist(context.v1_client, "acme-challenge-dispatcher-service", namespace, "service"):
+        service_template_path = os.path.join(os.path.dirname(__file__), 'test-data', 'acme-challenge-dispatcher-service.yaml')
+        with open(service_template_path) as f:
+            service_template = yaml.safe_load(f)
 
-    for process_info in context.port_forward_processes:
-        if process_info['pod_name'] == pod_name:
-            try:
-                subprocess.run(["kill", str(process_info['pid'])], check=True)
-                print(f"Stopped port forwarding for pod '{pod_name}' on port {pod_port}")
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to stop port forwarding: {e}")
-            context.port_forward_processes.remove(process_info)
-            break
-    else:
-        print(f"No port forwarding process found for pod '{pod_name}' on port {pod_port}")
+        v1.create_namespaced_service(namespace=namespace, body=service_template)
+        print(f"Service '{table[0]['name']}' created in namespace '{namespace}'")
+
+        start_time = time()
+        while time() - start_time < 60:
+            endpoints = v1.read_namespaced_endpoints(name="acme-challenge-dispatcher-service", namespace=namespace)
+            if endpoints.subsets:
+                break
+            sleep(1)
+        else:
+            raise Exception("Service did not get any endpoints after one minute")
+
 
 @step('I do {num_requests:d} GET request to {port:d} with the following parameters')
 def do_get_request(context, num_requests, port):
@@ -180,7 +153,7 @@ def check_response(context, response_number=None, expected_code=None, expected_c
 @step('I delete the pods')
 def delete_pods(context):
     namespace = context.namespace
-    v1 = context.api_client
+    v1 = context.v1_client
 
     for row in context.table:
         pod_name = row['name']
@@ -203,16 +176,18 @@ def delete_pod_if_exists(v1, pod_name, namespace):
             if has_deleted:
                 return
 
-def does_pod_exist(v1, pod_name, namespace):
+def does_object_exist(v1, name, namespace, type):
     try:
-        v1.read_namespaced_pod(name=pod_name, namespace=namespace)
+        if type == "pod":
+            v1.read_namespaced_pod(name=name, namespace=namespace)
+        elif type == "service":
+            v1.read_namespaced_service(name=name, namespace=namespace)
         return True
     except client.exceptions.ApiException as e:
         if e.status == 404:
             return False
         else:
             raise
-
 
 def is_pod_running_and_ready(v1, namespace, pod_name, timeout=60):
     start_time = time()

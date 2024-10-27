@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: acme-challenge-service
+  name: acme-challenge-dispatcher-service
 spec:
   type: NodePort
   selector:
