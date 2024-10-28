@@ -57,7 +57,7 @@ def get_acme_clients():
             logger.debug("Found pod '%s' with ip '%s'", pod.metadata.name, pod.status.pod_ip)
             acme_clients.append(pod.status.pod_ip)
         else:
-            logger.warning("Pod '%s' does not have an ip (yet)'", pod.metadata.name, pod.status.pod_ip)
+            logger.warning("Pod '%s' does not have an ip (yet)'", pod.metadata.name)
     return acme_clients
 
 
