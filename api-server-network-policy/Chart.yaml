@@ -1,0 +1,6 @@
+apiVersion: v2
+name: api-server-network-policy
+description: A Helm chart for creating a network policy that allows egress to the api server
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
