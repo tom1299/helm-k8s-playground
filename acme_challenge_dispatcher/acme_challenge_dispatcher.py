@@ -17,14 +17,17 @@ NAMESPACE = os.getenv('POD_NAMESPACE')
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('LOG_LEVEL', 'DEBUG'))
+logger.setLevel(os.getenv('LOG_LEVEL', 'INFO'))
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
+        self.datefmt = f'%Y-%m-%dT%H:%M:%S.{record.msecs:03.0f}Z'
         log_record = {
-            'message': record.getMessage(),
+            'timestamp': self.formatTime(record, self.datefmt),
             'level': record.levelname,
-            'time': self.formatTime(record, self.datefmt),
+            'service': 'acme-challenge-dispatcher',
+            'version': os.getenv('VERSION', '1.0.0'),
+            'message': record.getMessage(),
             'filename': record.filename,
             'function': record.funcName,
             'line': record.lineno
@@ -48,13 +51,10 @@ def get_acme_clients():
     v1 = get_api_client()
     pods = v1.list_namespaced_pod(namespace=NAMESPACE, label_selector=LABEL_SELECTOR)
     if not pods:
-        logger.info("No pods found with label selector '%s'", LABEL_SELECTOR)
         return []
-    logger.info("Found %d pods with label selector '%s'", len(pods.items), LABEL_SELECTOR)
     acme_clients = []
     for pod in pods.items:
         if pod.status.pod_ip:
-            logger.debug("Found pod '%s' with ip '%s'", pod.metadata.name, pod.status.pod_ip)
             acme_clients.append(pod.status.pod_ip)
         else:
             logger.warning("Pod '%s' does not have an ip (yet)'", pod.metadata.name)
@@ -142,16 +142,15 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
     def handle_new_token(self, host, token):
         logger.debug("Request for new token %s for host %s received", token, host)
         acme_clients = get_acme_clients()
+        logger.info("Found %s ACME clients: %s", len(acme_clients), acme_clients)
         for client_ip in acme_clients:
             logger.debug("Trying ACME client with ip %s and token %s", client_ip, token)
             response = self.send_request_to_acme_client(client_ip, token, host)
             if response and response.status_code == 200:
-                logger.debug("ACME client %s returned 200 and response %s for token %s. Adding %s to cache",
+                logger.info("ACME client %s returned 200 and response %s for token %s. Adding %s to cache",
                              client_ip, response.content, token, client_ip)
                 ChallengeHandler.acme_clients_cache[token] = client_ip
                 self.send_success(response, token, client_ip)
-                logger.info("Successfully returned response for token %s from ACME client %s. Added %s to cache",
-                            token, client_ip, client_ip)
                 return
 
         logger.error("None of the ACME clients returned 200 for token %s. Returning 404", token)
@@ -163,7 +162,6 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
         response = self.send_request_to_acme_client(client_ip, token, host)
         if response and response.status_code == 200:
             self.send_success(response, token, client_ip)
-            logger.info("Successfully returned response for token %s from ACME client %s", token, client_ip)
         else:
             ChallengeHandler.acme_clients_cache.pop(token)
             logger.error("ACME client '%s' did not return 200 for token %s: %s. Removed %s from cache",
