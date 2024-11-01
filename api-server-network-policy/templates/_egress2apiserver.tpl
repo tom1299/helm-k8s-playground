@@ -12,22 +12,20 @@ spec:
   policyTypes:
   - Egress
   egress:
-  {{- $endpoints := (lookup "v1" "Endpoints" "default" "kubernetes").subsets }}
+  {{- $endpoints := (lookup "v1" "Endpoints" "default" "kubernetes") }}
   {{- if $endpoints }}
+  {{- range $endpoints.subsets }}
   - to:
-    {{- range $subset := $endpoints }}
-      {{- range $address := $subset.addresses }}
-    - ipBlock:
-        cidr: {{ $address.ip }}/32
+      {{- range .addresses }}
+      - ipBlock:
+          cidr: {{ .ip }}/32
       {{- end }}
-    {{- end }}
     ports:
-    {{- range $subset := $endpoints }}
-      {{- range $port := $subset.ports }}
-    - protocol: TCP
-      port: {{ $port.port }}
+      {{- range .ports }}
+      - protocol: {{ .protocol }}
+        port: {{ .port }}
       {{- end }}
-    {{- end }}
+  {{- end }}
   {{- else }}
   - to:
     - ipBlock:
