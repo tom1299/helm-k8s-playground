@@ -1,7 +1,5 @@
 import os
 import http.server
-import logging
-import json
 import signal
 import socketserver
 import threading
@@ -10,36 +8,14 @@ import traceback
 
 import requests
 
-from k8s_utils import get_core_v1_client
+from k8s_functions import get_core_v1_client
+from log_functions import get_logger
 
 LABEL_SELECTOR = os.getenv('LABEL_SELECTOR', 'app=acme-challenge-dispatcher')
 NAMESPACE = os.getenv('POD_NAMESPACE')
-
-logging.basicConfig(level=logging.INFO, format='%(message)s')
-logger = logging.getLogger(__name__)
-logger.setLevel(os.getenv('LOG_LEVEL', 'INFO'))
-
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        self.datefmt = f'%Y-%m-%dT%H:%M:%S.{record.msecs:03.0f}Z'
-        log_record = {
-            'timestamp': self.formatTime(record, self.datefmt),
-            'level': record.levelname,
-            'service': 'acme-challenge-dispatcher',
-            'version': os.getenv('VERSION', '1.0.0'),
-            'message': record.getMessage(),
-            'filename': record.filename,
-            'function': record.funcName,
-            'line': record.lineno
-        }
-        return json.dumps(log_record)
-
-handler = logging.StreamHandler()
-handler.setFormatter(JSONFormatter())
-logger.propagate = False
-logger.addHandler(handler)
-
 API_CLIENT = None
+
+logger = get_logger()
 
 def get_api_client():
     global API_CLIENT
