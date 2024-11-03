@@ -8,7 +8,7 @@ from kubernetes import utils
 
 import yaml
 
-from acme_challenge_dispatcher.k8s_utils import get_core_v1_client, get_api_client
+from acme_challenge_dispatcher.k8s_functions import get_core_v1_client, get_api_client
 
 from behave import step
 from kubernetes import client

@@ -48,9 +48,14 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_health_request()
             return
 
+        if self.path == '/metrics':
+            self.handle_metrics_request()
+            return
+
         logger.error("Invalid path: %s for health check", self.path)
         self.send_response(404)
         self.end_headers()
+        ChallengeHandler.counter_404 += 1
 
     def handle_health_request(self):
         try:
@@ -59,21 +64,43 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.end_headers()
                 logger.debug("Cluster connection is healthy, ACME clients: %s", acme_clients)
+                ChallengeHandler.counter_200 += 1
             else:
                 logger.error("Cluster connection is not healthy, no ACME clients found")
                 self.send_response(500)
                 self.end_headers()
+                ChallengeHandler.counter_500 += 1
         except Exception as e: # pylint: disable=broad-except
             logger.error("Cluster connection is not healthy: %s\n%s", str(e), traceback.format_exc())
             self.send_response(500)
             self.end_headers()
+            ChallengeHandler.counter_500 += 1
+
+    def handle_metrics_request(self):
+        metrics = (
+            "# HELP acme_service_dispatcher_requests_total Total number of scrapes by HTTP status code.\n"
+            "# TYPE acme_service_dispatcher_requests_total counter\n"
+            f"acme_service_dispatcher_requests_total{{code=\"200\"}} {ChallengeHandler.counter_200}\n"
+            f"acme_service_dispatcher_requests_total{{code=\"400\"}} {ChallengeHandler.counter_400}\n"
+            f"acme_service_dispatcher_requests_total{{code=\"404\"}} {ChallengeHandler.counter_404}\n"
+            f"acme_service_dispatcher_requests_total{{code=\"500\"}} {ChallengeHandler.counter_500}\n"
+        )
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; version=0.0.4")
+        self.end_headers()
+        self.wfile.write(metrics.encode())
 
 
 class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
 
     acme_clients_cache = {}
-
     last_acme_challenge_request_time = 0
+
+    # Counters for HTTP status codes
+    counter_200 = 0
+    counter_400 = 0
+    counter_404 = 0
+    counter_500 = 0
 
     def __init__(self, request, client_address, server):
         if request is None:
@@ -149,6 +176,7 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         error_message = "404 Not Found"
         self.wfile.write(error_message.encode())
+        ChallengeHandler.counter_404 += 1
 
     def handle_missing_token_or_host(self):
         logger.error("Token or host missing in request: %s, Headers: %s", self.path, self.headers)
@@ -156,6 +184,7 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         error_message = "400 Bad Request"
         self.wfile.write(error_message.encode())
+        ChallengeHandler.counter_400 += 1
 
     def handle_non_challenge_request(self):
         self.send_response(404)
@@ -163,6 +192,7 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
         error_message = "404 Not Found"
         logger.error("Invalid path: %s", self.path)
         self.wfile.write(error_message.encode())
+        ChallengeHandler.counter_404 += 1
 
     def extract_token(self):
         if not self.path:
@@ -179,6 +209,7 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
         except requests.RequestException as e:
             logger.error("Error while sending request to ACME client %s: %s\n%s",
                          client_ip, str(e), traceback.format_exc())
+            ChallengeHandler.counter_500 += 1
             return None
 
     def send_success(self, response, token, client_ip):
@@ -188,6 +219,7 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(response.content)
         logger.info("Successfully wrote response %s for token %s from ACME client %s", response.content,
                     token, client_ip)
+        ChallengeHandler.counter_200 += 1
 
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True

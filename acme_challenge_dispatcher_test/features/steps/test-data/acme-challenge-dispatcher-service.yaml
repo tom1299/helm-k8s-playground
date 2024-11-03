@@ -11,3 +11,7 @@ spec:
       protocol: TCP
       port: 8089
       nodePort: 30950
+    - name: metrics
+      protocol: TCP
+      port: 8081
+      nodePort: 30951
