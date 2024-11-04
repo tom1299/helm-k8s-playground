@@ -141,11 +141,19 @@ def do_get_request(context, num_requests, port):
 
 @step('response number {response_number:d} should have return code {expected_code:d} and content "{expected_content}"')
 @step('all responses should have return code {expected_code:d} and content "{expected_content}"')
+@step('response number {response_number:d} should have return code {expected_code:d} and no content')
+@step('response number {response_number:d} should have return code {expected_code:d} and content')
 def check_response(context, response_number=None, expected_code=None, expected_content=None):
+    if not expected_content:
+        expected_content = None if context.text is None else str(context.text)
+
     if response_number is not None:
-        response = context.requests[response_number - 1]  # Adjust for 0-based index
+        response = context.requests[response_number - 1]
         assert response.status_code == expected_code, f"Expected status code {expected_code}, but got {response.status_code}"
-        assert response.text == expected_content, f"Expected content '{expected_content}', but got '{response.text}'"
+        if expected_content:
+            assert response.text == expected_content, f"Expected content '{expected_content}', but got '{response.text}'"
+        else:
+            assert not response.text or response.text == '', f"Expected no content, but got '{response.text}'"
     else:
         for response in context.requests:
             assert response.status_code == expected_code, f"Expected status code {expected_code}, but got {response.status_code}"

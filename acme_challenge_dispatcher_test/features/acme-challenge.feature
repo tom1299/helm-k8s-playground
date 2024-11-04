@@ -132,3 +132,29 @@ Scenario: Diverse error cases
     | name |
     | acme-challenge-dispatcher-1 |
     | acme-solver-1 |
+
+Scenario: Test health and metrics endpoint
+    When I do 1 GET request to 8081 with the following parameters
+    | url | port | host |
+    | /healthz | 8081 | acme-challenge-dispatcher-1.com |
+    Then response number 1 should have return code 200 and no content
+    When I do 1 GET request to 8081 with the following parameters
+    | url | port | host |
+    | /invalid-path | 8081 | acme-challenge-dispatcher-1.com |
+    Then response number 1 should have return code 404 and no content
+    When I do 1 GET request to 8081 with the following parameters
+    | url | port | host |
+    | /metrics | 8081 | acme-challenge-dispatcher-1.com |
+    Then response number 1 should have return code 200 and content
+    """
+    # HELP acme_service_dispatcher_requests_total Total number of scrapes by HTTP status code.
+    # TYPE acme_service_dispatcher_requests_total counter
+    acme_service_dispatcher_requests_total{code="200"} 0
+    acme_service_dispatcher_requests_total{code="400"} 0
+    acme_service_dispatcher_requests_total{code="404"} 0
+    acme_service_dispatcher_requests_total{code="500"} 0
+    """
+    And I delete the pods
+    | name |
+    | acme-challenge-dispatcher-1 |
+    | acme-solver-1 |

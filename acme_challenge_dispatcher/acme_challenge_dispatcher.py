@@ -55,7 +55,6 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
         logger.error("Invalid path: %s for health check", self.path)
         self.send_response(404)
         self.end_headers()
-        ChallengeHandler.counter_404 += 1
 
     def handle_health_request(self):
         try:
@@ -64,17 +63,14 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.end_headers()
                 logger.debug("Cluster connection is healthy, ACME clients: %s", acme_clients)
-                ChallengeHandler.counter_200 += 1
             else:
                 logger.error("Cluster connection is not healthy, no ACME clients found")
                 self.send_response(500)
                 self.end_headers()
-                ChallengeHandler.counter_500 += 1
         except Exception as e: # pylint: disable=broad-except
             logger.error("Cluster connection is not healthy: %s\n%s", str(e), traceback.format_exc())
             self.send_response(500)
             self.end_headers()
-            ChallengeHandler.counter_500 += 1
 
     def handle_metrics_request(self):
         metrics = (
@@ -83,7 +79,7 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
             f"acme_service_dispatcher_requests_total{{code=\"200\"}} {ChallengeHandler.counter_200}\n"
             f"acme_service_dispatcher_requests_total{{code=\"400\"}} {ChallengeHandler.counter_400}\n"
             f"acme_service_dispatcher_requests_total{{code=\"404\"}} {ChallengeHandler.counter_404}\n"
-            f"acme_service_dispatcher_requests_total{{code=\"500\"}} {ChallengeHandler.counter_500}\n"
+            f"acme_service_dispatcher_requests_total{{code=\"500\"}} {ChallengeHandler.counter_500}"
         )
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; version=0.0.4")
