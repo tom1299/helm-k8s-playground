@@ -113,6 +113,7 @@ def deploy_acme_challenge_dispatcher_pod(context):
         with open(service_template_path) as f:
             service_template = yaml.safe_load(f)
 
+        v1 = context.v1_client
         v1.create_namespaced_service(namespace=namespace, body=service_template)
         print(f"Service '{table[0]['name']}' created in namespace '{namespace}'")
 
