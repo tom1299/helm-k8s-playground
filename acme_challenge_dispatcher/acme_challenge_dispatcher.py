@@ -23,18 +23,18 @@ def get_api_client():
         API_CLIENT = get_core_v1_client(logger)
     return API_CLIENT
 
-def get_acme_clients():
+def get_cert_manager_pods():
     v1 = get_api_client()
     pods = v1.list_namespaced_pod(namespace=NAMESPACE, label_selector=LABEL_SELECTOR)
     if not pods:
         return []
-    acme_clients = []
+    cert_manager_pods = []
     for pod in pods.items:
         if pod.status.pod_ip:
-            acme_clients.append(pod.status.pod_ip)
+            cert_manager_pods.append(pod.status.pod_ip)
         else:
             logger.warning("Pod '%s' does not have an ip (yet)'", pod.metadata.name)
-    return acme_clients
+    return cert_manager_pods
 
 
 class HealthHandler(http.server.SimpleHTTPRequestHandler):
@@ -58,13 +58,13 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
 
     def handle_health_request(self):
         try:
-            acme_clients = get_acme_clients()
-            if acme_clients is not None:
+            cert_manager_pods = get_cert_manager_pods()
+            if cert_manager_pods is not None:
                 self.send_response(200)
                 self.end_headers()
-                logger.debug("Cluster connection is healthy, ACME clients: %s", acme_clients)
+                logger.debug("Cluster connection is healthy, cert manager pods: %s", cert_manager_pods)
             else:
-                logger.error("Cluster connection is not healthy, no ACME clients found")
+                logger.error("Cluster connection is not healthy, no cert manager pods found")
                 self.send_response(500)
                 self.end_headers()
         except Exception as e: # pylint: disable=broad-except
@@ -89,7 +89,7 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
 
 class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
 
-    acme_clients_cache = {}
+    cert_manager_pods_cache = {}
     last_acme_challenge_request_time = 0
 
     # Counters for HTTP status codes
@@ -124,47 +124,47 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_missing_token_or_host()
             return
 
-        logger.info("Current cache content: %s", ChallengeHandler.acme_clients_cache)
+        logger.info("Current cache content: %s", ChallengeHandler.cert_manager_pods_cache)
         ChallengeHandler.last_acme_challenge_request_time = time.time()
         self.clear_cache_if_needed()
 
-        if token in ChallengeHandler.acme_clients_cache:
+        if token in ChallengeHandler.cert_manager_pods_cache:
             self.handle_cached_token(host, token)
         else:
             self.handle_new_token(host, token)
 
     def clear_cache_if_needed(self):
         if time.time() - ChallengeHandler.last_acme_challenge_request_time > 600:
-            ChallengeHandler.acme_clients_cache.clear()
+            ChallengeHandler.cert_manager_pods_cache.clear()
             logger.info("Cleared cache as no ACME challenge request was received in last 600 seconds")
 
     def handle_new_token(self, host, token):
         logger.debug("Request for new token %s for host %s received", token, host)
-        acme_clients = get_acme_clients()
-        logger.info("Found %s ACME clients: %s", len(acme_clients), acme_clients)
-        for client_ip in acme_clients:
-            logger.debug("Trying ACME client with ip %s and token %s", client_ip, token)
-            response = self.send_request_to_acme_client(client_ip, token, host)
+        cert_manager_pods = get_cert_manager_pods()
+        logger.info("Found %s cert manager pods: %s", len(cert_manager_pods), cert_manager_pods)
+        for pod_ip in cert_manager_pods:
+            logger.debug("Trying cert manager pod with ip %s and token %s", pod_ip, token)
+            response = self.send_request_to_cert_manager_pod(pod_ip, token, host)
             if response and response.status_code == 200:
-                logger.info("ACME client %s returned 200 and response %s for token %s. Adding %s to cache",
-                             client_ip, response.content, token, client_ip)
-                ChallengeHandler.acme_clients_cache[token] = client_ip
-                self.send_success(response, token, client_ip)
+                logger.info("Cert manager pod %s returned 200 and response %s for token %s. Adding %s to cache",
+                             pod_ip, response.content, token, pod_ip)
+                ChallengeHandler.cert_manager_pods_cache[token] = pod_ip
+                self.send_success(response, token, pod_ip)
                 return
 
-        logger.error("None of the ACME clients returned 200 for token %s. Returning 404", token)
+        logger.error("None of the cert manager pods returned 200 for token %s. Returning 404", token)
         self.send_404()
 
     def handle_cached_token(self, host, token):
-        client_ip = ChallengeHandler.acme_clients_cache[token]
-        logger.info("Found ACME client with IP %s in cache for token %s", client_ip, token)
-        response = self.send_request_to_acme_client(client_ip, token, host)
+        pod_ip = ChallengeHandler.cert_manager_pods_cache[token]
+        logger.info("Found cert manager pod with IP %s in cache for token %s", pod_ip, token)
+        response = self.send_request_to_cert_manager_pod(pod_ip, token, host)
         if response and response.status_code == 200:
-            self.send_success(response, token, client_ip)
+            self.send_success(response, token, pod_ip)
         else:
-            ChallengeHandler.acme_clients_cache.pop(token)
-            logger.error("ACME client '%s' did not return 200 for token %s: %s. Removed %s from cache",
-                         client_ip, token, response.status_code if response else 'No response', client_ip)
+            ChallengeHandler.cert_manager_pods_cache.pop(token)
+            logger.error("Cert manager pod '%s' did not return 200 for token %s: %s. Removed %s from cache",
+                         pod_ip, token, response.status_code if response else 'No response', pod_ip)
             self.send_404()
 
     def send_404(self):
@@ -196,25 +196,25 @@ class ChallengeHandler(http.server.SimpleHTTPRequestHandler):
             return ''
         return self.path.split('/')[-1]
 
-    def send_request_to_acme_client(self, client_ip, token, host):
-        url = f"http://{client_ip}:8089/.well-known/acme-challenge/{token}"
+    def send_request_to_cert_manager_pod(self, pod_ip, token, host):
+        url = f"http://{pod_ip}:8089/.well-known/acme-challenge/{token}"
         headers = {'Host': host, 'User-Agent': 'acme-challenge-dispatcher'}
         try:
             response = requests.get(url, headers=headers, timeout=1)
             return response
         except requests.RequestException as e:
-            logger.error("Error while sending request to ACME client %s: %s\n%s",
-                         client_ip, str(e), traceback.format_exc())
+            logger.error("Error while sending request to ACME pod %s: %s\n%s",
+                         pod_ip, str(e), traceback.format_exc())
             ChallengeHandler.counter_500 += 1
             return None
 
-    def send_success(self, response, token, client_ip):
-        ChallengeHandler.acme_clients_cache[token] = client_ip
+    def send_success(self, response, token, pod_ip):
+        ChallengeHandler.cert_manager_pods_cache[token] = pod_ip
         self.send_response(200)
         self.end_headers()
         self.wfile.write(response.content)
-        logger.info("Successfully wrote response %s for token %s from ACME client %s", response.content,
-                    token, client_ip)
+        logger.info("Successfully wrote response %s for token %s from cert manager pod %s", response.content,
+                    token, pod_ip)
         ChallengeHandler.counter_200 += 1
 
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):

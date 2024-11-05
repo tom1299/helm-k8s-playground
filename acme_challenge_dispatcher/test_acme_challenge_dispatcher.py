@@ -4,7 +4,7 @@ from acme_challenge_dispatcher import ChallengeHandler
 
 from unittest.mock import MagicMock, patch
 
-from acme_challenge_dispatcher import get_acme_clients
+from acme_challenge_dispatcher import get_cert_manager_pods
 
 
 class TestAcmeChallengeDispatcher(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
     def setUp(self):
         self.dispatcher = ChallengeHandler.create_without_server()
         ChallengeHandler.api_client = None
-        ChallengeHandler.acme_clients_cache = {}
+        ChallengeHandler.cert_manager_pods_cache = {}
 
     def test_extract_token_valid_path(self):
         self.dispatcher.path = '/.well-known/acme-challenge/JHb54aT_KTXBWQOzGYkt9A'
@@ -60,7 +60,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
         client_ip = '192.168.1.1'
         token = 'JHb54aT_KTXBWQOzGYkt9A'
         host = 'example.com'
-        response = self.dispatcher.send_request_to_acme_client(client_ip, token, host)
+        response = self.dispatcher.send_request_to_cert_manager_pod(client_ip, token, host)
 
         self.assertIsNotNone(response)
         self.assertEqual(response.status_code, 200)
@@ -73,7 +73,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
         client_ip = '192.168.1.1'
         token = 'JHb54aT_KTXBWQOzGYkt9A'
         host = 'example.com'
-        response = self.dispatcher.send_request_to_acme_client(client_ip, token, host)
+        response = self.dispatcher.send_request_to_cert_manager_pod(client_ip, token, host)
 
         self.assertIsNone(response)
 
@@ -86,7 +86,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
             MagicMock(status=MagicMock(pod_ip='192.168.1.2'))
         ]
 
-        acme_clients = get_acme_clients()
+        acme_clients = get_cert_manager_pods()
         self.assertEqual(acme_clients, ['192.168.1.1', '192.168.1.2'])
 
     @patch('acme_challenge_dispatcher.get_api_client')
@@ -95,7 +95,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
         mock_get_api_client.return_value = mock_v1
         mock_v1.list_namespaced_pod.return_value.items = []
 
-        acme_clients = get_acme_clients()
+        acme_clients = get_cert_manager_pods()
         self.assertEqual(acme_clients, [])
 
     @patch('acme_challenge_dispatcher.get_api_client')
@@ -104,7 +104,7 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
         mock_get_api_client.return_value = mock_v1
         mock_v1.list_namespaced_pod.return_value = None
 
-        acme_clients = get_acme_clients()
+        acme_clients = get_cert_manager_pods()
         self.assertEqual(acme_clients, [])
 
 if __name__ == '__main__':
