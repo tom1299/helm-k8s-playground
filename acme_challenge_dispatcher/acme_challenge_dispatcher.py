@@ -1,4 +1,4 @@
-import os
+ import os
 import http.server
 import signal
 import socketserver
@@ -81,6 +81,7 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
             f"acme_service_dispatcher_requests_total{{code=\"404\"}} {ChallengeHandler.counter_404}\n"
             f"acme_service_dispatcher_requests_total{{code=\"500\"}} {ChallengeHandler.counter_500}"
         )
+        logger.debug("Serving metrics request with response: %s", metrics.encode())
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; version=0.0.4")
         self.end_headers()
