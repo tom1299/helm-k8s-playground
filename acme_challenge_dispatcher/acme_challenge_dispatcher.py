@@ -73,14 +73,12 @@ class HealthHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
 
     def handle_metrics_request(self):
-        metrics = (
-            "# HELP acme_service_dispatcher_requests_total Total number of scrapes by HTTP status code.\n"
-            "# TYPE acme_service_dispatcher_requests_total counter\n"
-            f"acme_service_dispatcher_requests_total{{code=\"200\"}} {ChallengeHandler.counter_200}\n"
-            f"acme_service_dispatcher_requests_total{{code=\"400\"}} {ChallengeHandler.counter_400}\n"
-            f"acme_service_dispatcher_requests_total{{code=\"404\"}} {ChallengeHandler.counter_404}\n"
-            f"acme_service_dispatcher_requests_total{{code=\"500\"}} {ChallengeHandler.counter_500}"
-        )
+        metrics = "# HELP acme_service_dispatcher_requests_total Total number of scrapes by HTTP status code.\n# TYPE acme_service_dispatcher_requests_total counter\n"
+        metrics += f'acme_service_dispatcher_requests_total{{code="200"}} {ChallengeHandler.counter_200}'
+        metrics += f'\nacme_service_dispatcher_requests_total{{code="400"}} {ChallengeHandler.counter_400}'
+        metrics += f'\nacme_service_dispatcher_requests_total{{code="404"}} {ChallengeHandler.counter_404}'
+        metrics += f'\nacme_service_dispatcher_requests_total{{code="500"}} {ChallengeHandler.counter_500}'
+
         logger.debug("Serving metrics request with response: %s", metrics.encode())
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; version=0.0.4")

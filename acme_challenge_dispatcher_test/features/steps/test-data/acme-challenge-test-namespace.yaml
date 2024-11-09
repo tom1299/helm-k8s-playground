@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: acme-challenge-test
+  labels:
+    prometheus-monitoring: "enabled"
+    kubernetes.io/metadata.name: acme-challenge-test

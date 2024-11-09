@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: acme-challenge-dispatcher
-    image: localhost/acme-challenge-dispatcher:v25
+    image: localhost/acme-challenge-dispatcher:1.0.0
     imagePullPolicy: IfNotPresent
     env:
     - name: POD_NAMESPACE
@@ -16,6 +16,8 @@ spec:
           fieldPath: metadata.namespace
     - name: LABEL_SELECTOR
       value: app=acme-http-solver
+    - name: LOG_LEVEL
+      value: DEBUG
     ports:
     - containerPort: 8089
       name: challenges

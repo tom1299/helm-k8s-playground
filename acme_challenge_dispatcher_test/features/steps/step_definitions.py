@@ -30,10 +30,9 @@ def check_namespace_exists(context, namespace):
     namespace_names = [ns.metadata.name for ns in namespaces.items]
 
     if namespace not in namespace_names:
-        v1.create_namespace(client.V1Namespace(metadata=client.V1ObjectMeta(name=namespace)))
-
+        v1.create_namespace(client.V1Namespace(metadata=client.V1ObjectMeta(name=namespace,
+                                                        labels={"prometheus-monitoring": "enabled"})))
     context.namespace = namespace
-
 
 @step('I deploy an acme solver pod with the following parameters')
 def deploy_acme_solver_pod(context):
