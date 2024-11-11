@@ -34,6 +34,16 @@ def check_namespace_exists(context, namespace):
                             labels={"prometheus-monitoring": "enabled", "kubernetes.io/metadata.name": namespace})))
     context.namespace = namespace
 
+@step('prometheus is running')
+def check_prometheus_running(context):
+    url = "http://127.0.0.1:9090/api/v1/status/buildinfo"
+    try:
+        response = requests.get(url, timeout=2)
+        assert response.status_code == 200, f"Expected status code 200, but got {response.status_code}"
+        print("Prometheus is running")
+    except requests.RequestException as e:
+        raise AssertionError(f"Failed to connect to Prometheus: {e}")
+
 @step('I deploy an acme solver pod with the following parameters')
 def deploy_acme_solver_pod(context):
     script_dir = os.path.dirname(__file__)
@@ -67,6 +77,42 @@ def deploy_acme_solver_pod(context):
             v1.create_namespaced_pod(namespace=context.namespace, body=pod_template)
 
             assert is_pod_running_and_ready(v1, context.namespace, name)
+
+@step('I deploy the acme challenge dispatcher pod monitor')
+def deploy_acme_challenge_dispatcher_pod_monitor(context):
+    namespace = context.namespace
+    monitor_template_path = os.path.join(os.path.dirname(__file__), 'test-data', 'acme-challenge-dispatcher-pod-monitor.yaml')
+
+    with open(monitor_template_path) as f:
+        monitor_template = yaml.safe_load(f)
+
+    custom_objects_api = client.CustomObjectsApi(context.api_client)
+    group = "monitoring.coreos.com"
+    version = "v1"
+    plural = "podmonitors"
+    name = monitor_template['metadata']['name']
+
+    try:
+        custom_objects_api.get_namespaced_custom_object(
+            group=group,
+            version=version,
+            namespace=namespace,
+            plural=plural,
+            name=name
+        )
+        print(f"PodMonitor '{name}' already exists in namespace '{namespace}'")
+    except client.exceptions.ApiException as e:
+        if e.status == 404:
+            custom_objects_api.create_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                body=monitor_template
+            )
+            print(f"PodMonitor '{name}' created in namespace '{namespace}'")
+        else:
+            raise
 
 @step('the service-account "{service_account_name}" exists')
 def step_impl(context, service_account_name):

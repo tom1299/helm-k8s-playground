@@ -3,8 +3,10 @@ Feature: Acme challenge processing
 
   Background:
     Given I have a connection to the cluster
+    And prometheus is running
     And the namespace "acme-challenge-test" exists
     And the service-account "acme-challenge-dispatcher" exists
+    And I deploy the acme challenge dispatcher pod monitor
     And I deploy the acme challenge dispatcher pod with the following parameters
     | name | image |
     | acme-challenge-dispatcher-1 | localhost/acme-challenge-dispatcher:1.0.0 |
