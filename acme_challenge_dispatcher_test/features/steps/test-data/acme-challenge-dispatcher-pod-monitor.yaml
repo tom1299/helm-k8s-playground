@@ -2,15 +2,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: acme-challenge-dispatcher-pod-monitor
-  namespace: prometheus
 spec:
   selector:
     matchLabels:
       app: acme-challenge-dispatcher
-  namespaceSelector:
-    matchNames:
-    - acme-challenge-test
   podMetricsEndpoints:
   - port: healthz
     path: /metrics
-    interval: 30s
+    interval: 10s

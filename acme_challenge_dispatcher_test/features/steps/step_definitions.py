@@ -31,7 +31,7 @@ def check_namespace_exists(context, namespace):
 
     if namespace not in namespace_names:
         v1.create_namespace(client.V1Namespace(metadata=client.V1ObjectMeta(name=namespace,
-                                                        labels={"prometheus-monitoring": "enabled"})))
+                            labels={"prometheus-monitoring": "enabled", "kubernetes.io/metadata.name": namespace})))
     context.namespace = namespace
 
 @step('I deploy an acme solver pod with the following parameters')
