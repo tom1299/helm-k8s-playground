@@ -1,0 +1,10 @@
+global:
+  baseValue: "from-base-value"
+  overriddenValue: "from-base-value"
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: "1.27.2"

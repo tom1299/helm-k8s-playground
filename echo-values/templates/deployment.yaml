@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "echo-values.fullname" . }}-nginx-config
+data:
+  nginx.conf: |
+    user  nginx;
+    worker_processes  1;
+
+    error_log  /var/log/nginx/error.log notice;
+    pid        /var/run/nginx.pid;
+
+    events {
+        worker_connections  1024;
+    }
+
+    http {
+        server {
+          listen 8080;
+          root /usr/share/nginx/html;
+        }
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+
+        access_log  /var/log/nginx/access.log  main;
+
+        sendfile        on;
+
+        keepalive_timeout  65;
+
+        # include /etc/nginx/conf.d/*.conf;
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "echo-values.fullname" . }}
+  labels:
+    {{- include "echo-values.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "echo-values.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "echo-values.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command: [nginx-debug, '-g', 'daemon off;']
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: config-volume
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: values.yaml
+            - name: nginx-config-volume
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "echo-values.fullname" . }}-config
+        - name: nginx-config-volume
+          configMap:
+            name: {{ include "echo-values.fullname" . }}-nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "echo-values.fullname" . }}-config
+data:
+  values.yaml: |-
+    {{ toYaml .Values | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "echo-values.fullname" . }}
+  labels:
+    {{- include "echo-values.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "echo-values.selectorLabels" . | nindent 4 }}
