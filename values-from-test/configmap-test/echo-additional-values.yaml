@@ -1,0 +1,11 @@
+global:
+  overriddenValue: from-config-map-echo-additional-values
+  echo-additional-values: from-config-map-echo-additional-values
+
+echo-additional-values-root: from-config-map-echo-additional-values-root
+
+trivy:
+  httpsProxy: http://example.com
+  additonialTrivyValue: from-config-map-echo-additional-values
+
+test1: test1-value
