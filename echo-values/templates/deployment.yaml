@@ -1,3 +1,15 @@
+{{ $outerScope := . }}
+{{ $count := .Values.numberOfConfigMaps | int }}
+{{- range $i := until $count }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "echo-values.fullname" $outerScope }}-cm-{{ $i }}
+data:
+  value: "{{ $i }}"
+{{- end }}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -38,6 +50,10 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- with .Values.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 8 }}
+  {{- end }}
   name: {{ include "echo-values.fullname" . }}
   labels:
     {{- include "echo-values.labels" . | nindent 4 }}
@@ -73,6 +89,11 @@ spec:
             - name: nginx-config-volume
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
+            {{- range $i := until $count }}
+            - name: config-volume-{{ $i }}
+              mountPath: /configmaps/config-{{ $i }}.yaml
+              subPath: values.yaml
+            {{- end }}
       volumes:
         - name: config-volume
           configMap:
@@ -80,6 +101,11 @@ spec:
         - name: nginx-config-volume
           configMap:
             name: {{ include "echo-values.fullname" . }}-nginx-config
+        {{- range $i := until $count }}
+        - name: config-volume-{{ $i }}
+          configMap:
+            name: {{ include "echo-values.fullname" $outerScope }}-cm-{{ $i }}
+        {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap

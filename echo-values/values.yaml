@@ -8,3 +8,9 @@ image:
   repository: nginx
   pullPolicy: IfNotPresent
   tag: "1.27.2"
+
+numberOfConfigMaps: 20
+
+deploymentAnnotations:
+  reloader.stakater.com/auto: "true"
+  reloader.stakater.com/delayed-upgrade: "true"
