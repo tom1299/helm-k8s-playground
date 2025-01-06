@@ -77,6 +77,28 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
 
         self.assertIsNone(response)
 
+    @patch('requests.get')
+    def test_send_request_to_acme_client_timeout(self, mock_get):
+        mock_get.side_effect = requests.Timeout("Request timed out")
+
+        client_ip = '192.168.1.1'
+        token = 'JHb54aT_KTXBWQOzGYkt9A'
+        host = 'example.com'
+        response = self.dispatcher.send_request_to_cert_manager_pod(client_ip, token, host)
+
+        self.assertIsNone(response)
+
+    @patch('requests.get')
+    def test_send_request_to_acme_client_invalid_url(self, mock_get):
+        mock_get.side_effect = requests.RequestException("Invalid URL")
+
+        client_ip = '192.168.1.1'
+        token = 'JHb54aT_KTXBWQOzGYkt9A'
+        host = 'example.com'
+        response = self.dispatcher.send_request_to_cert_manager_pod(client_ip, token, host)
+
+        self.assertIsNone(response)
+
     @patch('acme_challenge_dispatcher.get_api_client')
     def test_get_acme_clients_with_pods(self, mock_get_api_client):
         mock_v1 = MagicMock()
@@ -106,6 +128,31 @@ class TestAcmeChallengeDispatcher(unittest.TestCase):
 
         acme_clients = get_cert_manager_pods()
         self.assertEqual(acme_clients, [])
+
+    @patch('acme_challenge_dispatcher.get_api_client')
+    def test_get_acme_clients_with_mixed_pod_status(self, mock_get_api_client):
+        mock_v1 = MagicMock()
+        mock_get_api_client.return_value = mock_v1
+        mock_v1.list_namespaced_pod.return_value.items = [
+            MagicMock(status=MagicMock(pod_ip='192.168.1.1')),
+            MagicMock(status=MagicMock(pod_ip=None)),
+            MagicMock(status=MagicMock(pod_ip='192.168.1.2'))
+        ]
+
+        acme_clients = get_cert_manager_pods()
+        self.assertEqual(acme_clients, ['192.168.1.1', '192.168.1.2'])
+
+    @patch('acme_challenge_dispatcher.get_api_client')
+    def test_get_acme_clients_with_api_client_exception(self, mock_get_api_client):
+        mock_get_api_client.side_effect = Exception("API client error")
+        exception = False
+        try:
+            acme_clients = get_cert_manager_pods()
+        except Exception as e:
+            self.assertEqual(str(e), "API client error")
+            exception = True
+        self.assertTrue(exception)
+        
 
 if __name__ == '__main__':
     unittest.main()
