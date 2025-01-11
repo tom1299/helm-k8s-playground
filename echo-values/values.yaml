@@ -13,4 +13,4 @@ numberOfConfigMaps: 20
 
 deploymentAnnotations:
   reloader.stakater.com/auto: "true"
-  reloader.stakater.com/delayed-upgrade: "true"
+  reloader.stakater.com/delayed-upgrade: "10s"
