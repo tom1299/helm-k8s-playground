@@ -1,0 +1,378 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2025-01-11T06:50:24Z"
+  finalizers:
+  - batch.kubernetes.io/job-tracking
+  generateName: scan-vulnerabilityreport-6dcd5d66b4-
+  labels:
+    app.kubernetes.io/managed-by: trivy-operator
+    batch.kubernetes.io/controller-uid: 9695ed6d-ae2a-4a45-ab8e-1bf370543371
+    batch.kubernetes.io/job-name: scan-vulnerabilityreport-6dcd5d66b4
+    controller-uid: 9695ed6d-ae2a-4a45-ab8e-1bf370543371
+    job-name: scan-vulnerabilityreport-6dcd5d66b4
+    resource-spec-hash: 846dbfd5bd
+    trivy-operator.resource.kind: ReplicaSet
+    trivy-operator.resource.name: debug-echo-values-574b655b5d
+    trivy-operator.resource.namespace: examples
+    vulnerabilityReport.scanner: Trivy
+  name: scan-vulnerabilityreport-6dcd5d66b4-zvwrb
+  namespace: trivy-operator
+  ownerReferences:
+  - apiVersion: batch/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Job
+    name: scan-vulnerabilityreport-6dcd5d66b4
+    uid: 9695ed6d-ae2a-4a45-ab8e-1bf370543371
+  resourceVersion: "4540"
+  uid: d9018c84-8c24-4a45-95e0-c121503c23d1
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
+  automountServiceAccountToken: false
+  containers:
+  - args:
+    - -c
+    - trivy image --slow 'nginx:1.27.2' --scanners vuln,secret --image-config-scanners
+      secret   --skip-db-update  --cache-dir /tmp/trivy/.cache --quiet --list-all-pkgs
+      --format json > /tmp/scan/result_echo-values.json &&  bzip2 -c /tmp/scan/result_echo-values.json | base64
+    command:
+    - /bin/sh
+    env:
+    - name: TRIVY_SEVERITY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.severity
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_IGNORE_UNFIXED
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.ignoreUnfixed
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_OFFLINE_SCAN
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.offlineScan
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_JAVA_DB_REPOSITORY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.javaDbRepository
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_TIMEOUT
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.timeout
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_SKIP_FILES
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.skipFiles
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_SKIP_DIRS
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.skipDirs
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: HTTP_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.httpProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: HTTPS_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.httpsProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: NO_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.noProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    image: artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy:0.53.0
+    imagePullPolicy: IfNotPresent
+    name: echo-values
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 500M
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /tmp
+      name: tmp
+    - mountPath: /tmp/scan
+      name: scanresult
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: artifactory
+  initContainers:
+  - args:
+    - --cache-dir
+    - /tmp/trivy/.cache
+    - image
+    - --download-db-only
+    - --db-repository
+    - artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy-db
+    command:
+    - trivy
+    env:
+    - name: HTTP_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.httpProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: HTTPS_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.httpsProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: NO_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.noProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: GITHUB_TOKEN
+      valueFrom:
+        secretKeyRef:
+          key: trivy.githubToken
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: trivy.dbRepositoryUsername
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: trivy.dbRepositoryPassword
+          name: trivy-operator-trivy-config
+          optional: true
+    image: artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy:0.53.0
+    imagePullPolicy: IfNotPresent
+    name: f14d2e1d-6698-4e51-8e1c-9be7aa9cf7db
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 500M
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /tmp
+      name: tmp
+  - args:
+    - --cache-dir
+    - /tmp/trivy/.cache
+    - image
+    - --download-java-db-only
+    - --java-db-repository
+    - artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy-java-db
+    command:
+    - trivy
+    env:
+    - name: HTTP_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.httpProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: HTTPS_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.httpsProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: NO_PROXY
+      valueFrom:
+        configMapKeyRef:
+          key: trivy.noProxy
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: GITHUB_TOKEN
+      valueFrom:
+        secretKeyRef:
+          key: trivy.githubToken
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: trivy.dbRepositoryUsername
+          name: trivy-operator-trivy-config
+          optional: true
+    - name: TRIVY_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: trivy.dbRepositoryPassword
+          name: trivy-operator-trivy-config
+          optional: true
+    image: artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy:0.53.0
+    imagePullPolicy: IfNotPresent
+    name: f6b303fd-76ae-4dd5-b5bd-db146fc810f9
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 500M
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: FallbackToLogsOnError
+    volumeMounts:
+    - mountPath: /tmp
+      name: tmp
+  nodeName: kind-local-1-control-plane
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext:
+    fsGroup: 3000
+    runAsGroup: 10003
+    runAsNonRoot: true
+    runAsUser: 10003
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount: trivy-operator
+  serviceAccountName: trivy-operator
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - emptyDir: {}
+    name: tmp
+  - emptyDir: {}
+    name: scanresult
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2025-01-11T06:50:26Z"
+    status: "True"
+    type: PodReadyToStartContainers
+  - lastProbeTime: null
+    lastTransitionTime: "2025-01-11T06:50:24Z"
+    message: 'containers with incomplete status: [f6b303fd-76ae-4dd5-b5bd-db146fc810f9]'
+    reason: ContainersNotInitialized
+    status: "False"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2025-01-11T06:50:24Z"
+    message: 'containers with unready status: [echo-values]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2025-01-11T06:50:24Z"
+    message: 'containers with unready status: [echo-values]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2025-01-11T06:50:24Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - image: artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy:0.53.0
+    imageID: ""
+    lastState: {}
+    name: echo-values
+    ready: false
+    restartCount: 0
+    started: false
+    state:
+      waiting:
+        reason: PodInitializing
+  hostIP: 10.89.0.2
+  hostIPs:
+  - ip: 10.89.0.2
+  initContainerStatuses:
+  - containerID: containerd://941d5921cda4105ae753bd015ae5375a38ba5d083739cabec2f1366ee4860d01
+    image: artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy:0.53.0
+    imageID: artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy@sha256:53e6715d5c67e80e629f0dfa3bd6ed2bc74bdcaa4bdbe934a5a1811a249db6b9
+    lastState: {}
+    name: f14d2e1d-6698-4e51-8e1c-9be7aa9cf7db
+    ready: true
+    restartCount: 0
+    started: false
+    state:
+      terminated:
+        containerID: containerd://941d5921cda4105ae753bd015ae5375a38ba5d083739cabec2f1366ee4860d01
+        exitCode: 0
+        finishedAt: "2025-01-11T06:50:41Z"
+        reason: Completed
+        startedAt: "2025-01-11T06:50:25Z"
+  - containerID: containerd://4be595587930ae6545303f0fd2cedc3b089700b4de628028995eea82db747d9a
+    image: artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy:0.53.0
+    imageID: artifactory.devops.telekom.de/ghcr.io.docker/aquasecurity/trivy@sha256:53e6715d5c67e80e629f0dfa3bd6ed2bc74bdcaa4bdbe934a5a1811a249db6b9
+    lastState: {}
+    name: f6b303fd-76ae-4dd5-b5bd-db146fc810f9
+    ready: false
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2025-01-11T06:50:42Z"
+  phase: Pending
+  podIP: 10.244.0.17
+  podIPs:
+  - ip: 10.244.0.17
+  qosClass: Burstable
+  startTime: "2025-01-11T06:50:24Z"
