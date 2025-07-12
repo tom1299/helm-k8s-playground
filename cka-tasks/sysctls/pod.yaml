@@ -12,6 +12,13 @@ spec:
       preStop:
         exec:
           command: ["/bin/sh","-c","nginx -s quit; while killall -0 nginx; do sleep 1; done"]
+    securityContext:
+      seLinuxOptions:
+        type: "container_engine_X"
+        role: my_role
+        user: root
+      seccompProfile:
+        type: RuntimeDefault
   securityContext:
     sysctls:
     - name: kernel.shm_rmid_forced
@@ -21,6 +28,8 @@ spec:
     - name: kernel.msgmax
       value: "65536"
     seLinuxOptions:
-      type: "container_engine_t"
+      type: "container_engine_X"
       role: my_role
       user: root
+    seccompProfile:
+      type: Unconfined
