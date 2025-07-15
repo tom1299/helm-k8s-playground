@@ -27,5 +27,9 @@ kubeadm join ... --ignore-preflight-errors=SystemVerification
 ```
 
 # TODO
-- Find out why the cgroup cpuset is missing and fix it.
+- Find out why the cgroup cpuset is missing and fix it. Edit: Seems really to be related to Podman rootless as the same command works yields
+  the same error on the control plane node:
+    ```bash
+    kubeadm init phase preflight
+    ``` 
 - Find out whether it is possible to ignore specific errors instead of all SystemVerification errors.
