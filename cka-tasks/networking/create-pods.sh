@@ -67,8 +67,21 @@ podman exec -ti kind-worker ip route
 # 10.122.1.7 dev vethfc4ed760 scope host   # This is the IP of pod-worker1-2
 # 10.122.2.0/24 via 10.89.0.11 dev eth0
 #
-# TODO: Add explanation of the output. Especially how traffic from pods on worker1 are routed to worker2.
-# What happens when an additional worker node is added?
-# Seems like each worker node has its own subnet like 10.122.2.0/24 for worker2.
-# And that pod ips are taken from the same subnet as the worker node. For example, pod-worker2 has ip
-# 10.122.2.7
+# In kind each worker gets its own ip range, so that routes are not overlapping:
+#
+# $ kubectl get pod -o jsonpath='{.items[?(@.metadata.name=="pod-test-worker")].status.podIP}'
+# 10.122.3.2  # Running on test-worker node (added later)
+# $ kubectl get pod -o jsonpath='{.items[?(@.metadata.name=="pod-worker1-1")].status.podIP}'
+# 10.122.1.2  # Running on kind-worker node (first)
+# $ kubectl get pod -o jsonpath='{.items[?(@.metadata.name=="pod-worker2")].status.podIP}'
+# 10.122.2.2  # Running on kind-worker2 node (second)
+#
+# When a new worker is added, it gets a new range, so the routes do not overlap.
+# Confirmaation:
+#
+# kubectl get nodes -o jsonpath="{range .items[*]}{.metadata.name}{'\t'}{.spec.podCIDR}{'\n'}{end}"
+# kind-control-plane	10.122.0.0/24
+# kind-worker	10.122.1.0/24
+# kind-worker2	10.122.2.0/24
+# test-worker	10.122.3.0/24
+
