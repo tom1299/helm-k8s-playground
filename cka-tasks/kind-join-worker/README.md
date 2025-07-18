@@ -2,6 +2,7 @@
 
 ## Podman command
 ```bash
+export NODE_NAME=kind-worker-X
 podman run --restart on-failure --cpus="2" -v /lib/modules:/lib/modules:ro --privileged -h $NODE_NAME -d --network kind --network-alias $NODE_NAME --tmpfs /run --tmpfs /tmp --security-opt seccomp=unconfined --security-opt apparmor=unconfined --security-opt label=disable -v /var --name $NODE_NAME --label io.x-k8s.kind.cluster=kind --label io.x-k8s.kind.role=worker --env KIND_EXPERIMENTAL_CONTAINERD_SNAPSHOTTER docker.io/kindest/node:v1.33.1
 ```
 ## Joining
