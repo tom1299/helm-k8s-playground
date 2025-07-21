@@ -14,3 +14,8 @@ https://kind.sigs.k8s.io/docs/user/configuration/#nodeport-with-port-mappings
 
 ## Conclusion
 - Configuration of the kube-proxy could be done using [Kubeadm Config Patches](https://kind.sigs.k8s.io/docs/user/configuration/#kubeadm-config-patches).
+
+## TODO
+Find to understand this paragraph:
+https://kind.sigs.k8s.io/docs/user/configuration/#kubeadm-config-patches
+Especially the last part
