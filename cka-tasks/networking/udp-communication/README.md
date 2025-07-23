@@ -11,6 +11,9 @@ This takes a long time, set not to wait for a response and the command will run 
 `echo "Hello World" | nc -u -w1 127.0.0.1 8080`
 Quicker than above
 
+## Deployment
+`kubectl create deployment udp-server --image=alpine/socat --port=8080 -- socat -dd STDIO UDP4-LISTEN:8080,reuseaddr,fork`
+
 ## Additional information
 https://gist.github.com/jdimpson/6ae2f91ec133da8453b0198f9be05bd5
 
