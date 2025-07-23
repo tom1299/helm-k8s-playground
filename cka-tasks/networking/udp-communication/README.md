@@ -1,6 +1,8 @@
 ## UDP Server using socat
 `socat -dd STDIO UDP4-LISTEN:8080,reuseaddr,fork`
 `-dd` enables more verbose logging.
+Alternative command:
+`socat -dd STDIO UDP4-RECV:8080,reuseaddr`
 
 ## UDP Client using socat
 `echo "Message1" | socat - UDP:127.0.0.1:8080`
@@ -19,3 +21,7 @@ https://gist.github.com/jdimpson/6ae2f91ec133da8453b0198f9be05bd5
 
 See here for specifying source port and other things:
 https://superuser.com/questions/1473729/send-udp-packet-and-listen-for-replies
+
+## TODOs
+- How to use `create deplyoyment` when only providing args ?
+- Which socat udp command to use (LISTEN or RECV) ?
