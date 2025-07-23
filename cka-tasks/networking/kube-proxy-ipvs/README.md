@@ -4,7 +4,7 @@ and extra port mapping for node port services:
 https://kind.sigs.k8s.io/docs/user/configuration/#nodeport-with-port-mappings
 
 ## Questions:
-- Are there any other configuration options for kube-proxy available in kind? Especially regarding load balancing with ipvs (https://kubernetes.io/docs/reference/config-api/kube-proxy-config.v1alpha1/).
+- Are there any other configuration options for kube-proxy available in k^ind? Especially regarding load balancing with ipvs (https://kubernetes.io/docs/reference/config-api/kube-proxy-config.v1alpha1/).
 - How does kubernetes work without kube-proxy?
 
 ## Findings
@@ -14,6 +14,8 @@ https://kind.sigs.k8s.io/docs/user/configuration/#nodeport-with-port-mappings
 
 ## Conclusion
 - Configuration of the kube-proxy could be done using [Kubeadm Config Patches](https://kind.sigs.k8s.io/docs/user/configuration/#kubeadm-config-patches).
+- IPVS load balancing configuration, see here: https://kubernetes.io/blog/2018/07/09/ipvs-based-in-cluster-load-balancing-deep-dive/#ipvs-based-kube-proxy
+- Scheduler can be set here: https://kubernetes.io/docs/reference/config-api/kube-proxy-config.v1alpha1/#kubeproxy-config-k8s-io-v1alpha1-KubeProxyIPVSConfiguration
 
 ## TODO
 Find to understand this paragraph:
