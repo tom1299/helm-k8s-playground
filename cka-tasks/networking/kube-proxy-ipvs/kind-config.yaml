@@ -8,4 +8,6 @@ nodes:
     mode: ipvs
     logging:
       verbosity: 9
+    ipvs:
+      scheduler: "rr"  # Round Robin scheduler.
 - role: worker
