@@ -26,3 +26,16 @@ E0724 05:58:59.052847       1 server.go:136] "Error running ProxyServer" err="ca
 Find to understand this paragraph:
 https://kind.sigs.k8s.io/docs/user/configuration/#kubeadm-config-patches
 Especially the last part
+
+Look at podman rootless:
+https://github.com/containers/podman/blob/main/rootless.md
+Maybe adding capability sys_admin will make ipvs work?
+
+Error starting docker daemon:
+```
+Jul 24 09:08:42 p200300d91f0d2a0d22f3c0ff63ebaf71.dip0.t-ipconnect.de dockerd[149610]: failed to start daemon: Error initializing network controller: error obtaining controller instance: failed to register "bridge" driver: failed to create NAT chain DOCKER: COMMAND_FAILED: INVALID_IPV: 'ipv4' is not a valid backend or is unavailable
+```
+
+Problem related to iptables:
+https://discussion.fedoraproject.org/t/docker-network-problem-after-upgrade-f42/150133/5
+Look at the difference between iptables-nft and iptables-legacy
