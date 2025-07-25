@@ -30,6 +30,7 @@ https://superuser.com/questions/1473729/send-udp-packet-and-listen-for-replies
 - How to use `create deplyoyment` when only providing args ?
 - Which socat udp command to use (LISTEN or RECV) ?
 - Write tests that verify the `rr` behaviour.
+- Test the other load balancing algorithms.
 
 ## Findings
 ### Deployment
