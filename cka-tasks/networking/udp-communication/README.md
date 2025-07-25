@@ -15,7 +15,7 @@ Or as a pod:
 `echo "Hello World" | nc -u -w1 127.0.0.1 8080`
 
 ## Deployment
-`kubectl create deployment udp-server --image=alpine/socat --port=8080 -- socat -u -dd UDP4-LISTEN:8080,reuseaddr,fork STDIO`
+`kubectl create deployment udp-server --replicas=2 --image=alpine/socat --port=8080 -- socat -u -dd UDP4-LISTEN:8080,reuseaddr,fork STDIO`
 
 ## Service
 `kubectl expose deployment udp-server --port=8080 --target-port=8080 --protocol=UDP`
@@ -29,6 +29,7 @@ https://superuser.com/questions/1473729/send-udp-packet-and-listen-for-replies
 ## TODOs
 - How to use `create deplyoyment` when only providing args ?
 - Which socat udp command to use (LISTEN or RECV) ?
+- Write tests that verify the `rr` behaviour.
 
 ## Findings
 ### Deployment
@@ -37,3 +38,8 @@ https://superuser.com/questions/1473729/send-udp-packet-and-listen-for-replies
 `kubectl expose deployment udp-server --port=8080 --target-port=8080 --protocol=UDP`
 ### Client
 `kubectl run udp-client --image=alpine/socat --restart=Never --command -- sh -c 'echo "Message1" | socat -t 0 - UDP-SENDTO:udp-server:8080'`
+or in order to send requests interactively:
+`kubectl run udp-client --image=alpine/socat --restart=Never --command -- sleep infinity`
+
+## Conclusion
+Using round robin with udp works. UDP requests are load balanced evenly across the available pods. Even as new replicas are added.
