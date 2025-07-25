@@ -10,4 +10,5 @@ nodes:
       verbosity: 9
     ipvs:
       scheduler: "rr"  # Round Robin scheduler.
+      syncPeriod: 6s
 - role: worker
