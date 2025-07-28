@@ -68,4 +68,4 @@ kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=nginx-gateway-f
 #     fi
 # done
 
-kubectl apply -f ./gateway-tls-passthrough.yaml
+# kubectl apply -f ./gateway-tls-passthrough.yaml
