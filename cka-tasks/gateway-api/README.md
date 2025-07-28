@@ -54,3 +54,4 @@ spec:
         from: All
 ---
 Probably not possible to have two identical gateways for the same port.
+This might not work with nodeport services. See install.sh and kind configuration.
