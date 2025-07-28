@@ -7,24 +7,24 @@ helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric --create-namesp
 
 kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=nginx-gateway-fabric -n nginx-gateway --timeout=300s
 
-kubectl create namespace demo
+# kubectl create namespace demo
 
-kubectl config set-context --current --namespace=demo
+# kubectl config set-context --current --namespace=demo
 
-certs/create-certs.sh
+# certs/create-certs.sh
 
-kubectl create secret tls internal-cafe-secret \
-  --cert=./certs/ssl.internal.cafe.example.com.crt \
-  --key=./certs/ssl.internal.cafe.example.com.key \
-  --namespace=demo
+# kubectl create secret tls internal-cafe-secret \
+#   --cert=./certs/ssl.internal.cafe.example.com.crt \
+#   --key=./certs/ssl.internal.cafe.example.com.key \
+#   --namespace=demo
 
-kubectl apply -f ./application.yaml
+# kubectl apply -f ./application.yaml
 
-kubectl wait --for=condition=Ready pod -l app=coffee --timeout=300s
+# kubectl wait --for=condition=Ready pod -l app=coffee --timeout=300s
 
-kubectl wait --for=condition=Ready pod -l app=tea --timeout=300s
+# kubectl wait --for=condition=Ready pod -l app=tea --timeout=300s
 
-kubectl wait --for=condition=Ready pod -l app=secure-coffee --timeout=300s
+# kubectl wait --for=condition=Ready pod -l app=secure-coffee --timeout=300s
 
 # kubectl apply -f ./gateway.yaml
 
