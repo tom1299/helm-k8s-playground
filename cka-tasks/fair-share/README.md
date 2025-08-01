@@ -58,3 +58,34 @@ kubectl create deployment --image nginx:latest --replicas 3 -n quota nginx
 ```
 This will only work if the limit range is set to allow 630m of CPU per pod which has enough headroom for the 3 replicas to be scheduled on the node with class critical.
 
+# Example for pod preemption
+- Create priority class.
+- Run a pod that uses 1 cpu:
+```bash
+kubectl run --image nginx:latest --dry-run=client -oyaml nginx | kubectl set resources --requests=cpu=1 --local -oyaml -f - | kubectl apply -f -
+```
+- Run a pod that uses 2 cpus and has the priority class set:
+```bash
+kubectl run --image nginx:latest --dry-run=client -oyaml nginx2 | kubectl set resources --requests=cpu=2 --local -oyaml -f - | kubectl apply -f - --overrides='{"apiVersion": "v1", "spec": {"priorityClassName": "high-priority"}}'
+``` 
+
+Resulting events:
+```
+default              10s         Normal    Preempted                 pod/nginx                                                      Preempted by pod cf6837c9-cf9f-41ed-b552-f54f42fa533d on node critical-workload-node
+default              10s         Normal    Killing                   pod/nginx                                                      Stopping container nginx
+default              10s         Warning   FailedScheduling          pod/nginx2                                                     0/2 nodes are available: 1 Insufficient cpu, 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }.
+default              10s         Warning   FailedScheduling          pod/nginx2                                                     0/2 nodes are available: 1 Insufficient cpu, 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }. preemption: not eligible due to a terminating pod on the nominated node.
+default              10s         Normal    Scheduled                 pod/nginx2                                                     Successfully assigned default/nginx2 to critical-workload-node
+default              9s          Normal    Pulling                   pod/nginx2                                                     Pulling image "nginx:latest"
+default              8s          Normal    Pulled                    pod/nginx2                                                     Successfully pulled image "nginx:latest" in 999ms (999ms including waiting). Image size: 72223946 bytes.
+default              8s          Normal    Created                   pod/nginx2                                                     Created container: nginx2
+default              8s          Normal    Started                   pod/nginx2                                                     Started container nginx2
+kube-system          10s         Normal    Preempted                 pod/kindnet-rpsd6                                              Preempted by pod cf6837c9-cf9f-41ed-b552-f54f42fa533d on node critical-workload-node
+kube-system          10s         Normal    Killing                   pod/kindnet-rpsd6                                              Stopping container kindnet-cni
+kube-system          10s         Warning   FailedScheduling          pod/kindnet-zqgvq                                              0/2 nodes are available: 1 Insufficient cpu, 1 node(s) didn't satisfy plugin(s) [NodeAffinity]. preemption: 0/2 nodes are available: 1 No preemption victims found for incoming pod, 1 Preemption is not helpful for scheduling.
+kube-system          10s         Normal    SuccessfulCreate          daemonset/kindnet                                              Created pod: kindnet-zqgvq
+```
+The events show that:
+* The pod `nginx` was preempted by the pod `nginx2`
+* The pod `nginx2` was scheduled on the node
+* And the kindnet pod was also preempted, which was not expected, it seems that the kindnet pod is not protected by a priority class and thus can be preempted.

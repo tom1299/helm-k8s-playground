@@ -9,7 +9,6 @@ nodes:
 - role: worker
   labels:
     class: critical
-  extraMounts:
   kubeadmConfigPatches:
   - |
     kind: JoinConfiguration
