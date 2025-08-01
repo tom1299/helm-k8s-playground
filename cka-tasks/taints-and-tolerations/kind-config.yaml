@@ -1,0 +1,18 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: IniConfiguration
+    nodeRegistration:
+      name: control-plane-node
+- role: worker
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      name: mission-critical-node
+      taints:
+      - key: "mission-critical"
+        effect: "NoSchedule"
