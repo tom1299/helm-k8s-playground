@@ -6,7 +6,7 @@ Each pod should get the exact same amount of cpu.
 https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/
 https://kubernetes.io/docs/concepts/policy/node-resource-managers/
 
-# Reducing the number of nodes in kind
+# Reducing the number of cpus for a node in kind
 * Get the number of allocatable CPUs in the cluster
     ```bash
     kubectl get node critical-workload-node -o jsonpath='{.status.allocatable.cpu}'
