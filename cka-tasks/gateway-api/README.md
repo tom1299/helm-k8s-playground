@@ -3,6 +3,17 @@
 ## TODO
 Gateway api:
 - Do an example with header matching and default backend if not match could be found
+- Do an example for migration from an ingress resource to a gateway api including tls termination and a default backend (?)
+- Look at the RegularExpression type of the HTTPPathMatch.
+- Define a HTTPRoute with no match but with a backendRef
+
+## Difference ingress gateway
+**TLS**:
+> In Gateway API, TLS termination is a property of the Gateway listener, and similarly to the Ingress, a TLS certificate and key are also stored in a Secret.
+**Rules**:
+> The hostnames of an HTTPRoute must match the hostname of the Gateway listener.
+Rules api reference: https://gateway-api.sigs.k8s.io/reference/spec/#httprouterule
+Match rules: https://gateway-api.sigs.k8s.io/reference/spec/#httproutematch
 
 ## Miscelanous
 Continue here https://docs.nginx.com/nginx-gateway-fabric/traffic-management/https-termination/
