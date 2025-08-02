@@ -1,0 +1,24 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: example-2
+spec:
+  parentRefs:
+  - name: gateway
+  hostnames:
+  - "example2.com"
+  rules:
+  # Verification: $ curl -H "Host: example2.com" 127.0.0.1:8080/pod-2
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /pod-2
+    filters:
+      - type: URLRewrite
+        urlRewrite:
+          path:
+            type: ReplaceFullPath
+            replaceFullPath: /
+    backendRefs:
+    - name: service-2
+      port: 8080
