@@ -8,3 +8,12 @@ spec:
   - name: http
     port: 80
     protocol: HTTP
+  - name: https
+    protocol: HTTPS
+    port: 443
+    hostname: example-4.com
+    tls:
+      certificateRefs:
+      - kind: Secret
+        group: ""
+        name: example-4-tls-secret
