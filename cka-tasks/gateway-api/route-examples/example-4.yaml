@@ -8,7 +8,7 @@ spec:
   hostnames:
   - "example4.com"
   rules:
-  # Verification: $ curl -H "Host: example4.com" 127.0.0.1:8080/pod-4
+  # Verification: $ curl --insecure --resolve example4.com:8443:127.0.0.1 https://example4.com:8443/pod-4
   - matches:
     - path:
         type: PathPrefix
