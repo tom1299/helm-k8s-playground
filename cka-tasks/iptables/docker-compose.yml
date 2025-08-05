@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  client:
+    image: ghcr.io/cicdior/alpine-iptables:1.0.0@sha256:70d77b55a681800b975ec0e7c0e0d3bc6646a94b52f93b243d63ceca2eb9e0fc
+    container_name: client
+    command: sleep infinity
+    networks:
+      frontend-network:
+        ipv4_address: 10.10.0.10
+
+  frontend:
+    image: ghcr.io/cicdior/alpine-iptables:1.0.0@sha256:70d77b55a681800b975ec0e7c0e0d3bc6646a94b52f93b243d63ceca2eb9e0fc
+    container_name: frontend
+    command: sleep infinity
+    networks:
+      frontend-network:
+        ipv4_address: 10.10.0.20
+      backend-network:
+        ipv4_address: 192.168.100.20
+
+  backend:
+    image: ghcr.io/cicdior/alpine-iptables:1.0.0@sha256:70d77b55a681800b975ec0e7c0e0d3bc6646a94b52f93b243d63ceca2eb9e0fc
+    container_name: backend
+    command: sleep infinity
+    networks:
+      backend-network:
+        ipv4_address: 192.168.100.30
+
+networks:
+  frontend-network:
+    # IP range: 10.10.0.2 - 10.10.0.254 (253 usable addresses)
+    driver: bridge
+    name: frontend-net
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
+          gateway: 10.10.0.1
+
+  backend-network:
+    # IP range: 192.168.100.2 - 192.168.100.254 (253 usable addresses)
+    driver: bridge
+    name: backend-net
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+          gateway: 192.168.100.1
