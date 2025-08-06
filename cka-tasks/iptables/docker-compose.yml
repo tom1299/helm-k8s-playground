@@ -31,6 +31,24 @@ services:
       backend-network:
         ipv4_address: 10.0.0.2
 
+  backend2:
+    image: ghcr.io/cicdior/alpine-iptables:1.0.0@sha256:70d77b55a681800b975ec0e7c0e0d3bc6646a94b52f93b243d63ceca2eb9e0fc
+    container_name: backend2
+    hostname: backend2
+    command: sh -c "nc -l -u -k -p 1234 & nc -l -t -k -p 5678 & wait"
+    networks:
+      backend-network:
+        ipv4_address: 10.0.0.3
+
+  backend3:
+    image: ghcr.io/cicdior/alpine-iptables:1.0.0@sha256:70d77b55a681800b975ec0e7c0e0d3bc6646a94b52f93b243d63ceca2eb9e0fc
+    container_name: backend3
+    hostname: backend3
+    command: sh -c "nc -l -u -k -p 1234 & nc -l -t -k -p 5678 & wait"
+    networks:
+      backend-network:
+        ipv4_address: 10.0.0.4
+
 networks:
   frontend-network:
     driver: bridge
