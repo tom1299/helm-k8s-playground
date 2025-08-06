@@ -41,3 +41,6 @@ iptables -t nat -A PREROUTING -p tcp --dport 27020 -j DNAT --to-destination 10.0
 iptables -A POSTROUTING -t nat -p tcp -d 10.0.0.3 --dport 5678  -j SNAT  --to-source 10.0.0.1
 iptables -A POSTROUTING -t nat -p tcp -d 10.0.0.4 --dport 5678  -j SNAT  --to-source 10.0.0.1
 ```
+
+## TODO
+Look at other matching algorithms. See https://linux.die.net/man/8/iptables
