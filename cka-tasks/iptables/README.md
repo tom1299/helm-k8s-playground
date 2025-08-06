@@ -33,4 +33,11 @@ iptables -A POSTROUTING -t nat -p tcp -d 10.0.0.2 --dport 5678  -j SNAT  --to-so
 iptables -t nat -A PREROUTING -p udp --dport 27019 -m statistic --mode nth --every 3 --packet 0 -j DNAT --to-destination 10.0.0.2:1234
 iptables -t nat -A PREROUTING -p udp --dport 27019 -m statistic --mode nth --every 2 --packet 0 -j DNAT --to-destination 10.0.0.3:1234
 iptables -t nat -A PREROUTING -p udp --dport 27019 -j DNAT --to-destination 10.0.0.4:1234
+# tcp load balancing
+iptables -t nat -A PREROUTING -p tcp --dport 27020 -m statistic --mode nth --every 3 --packet 0 -j DNAT --to-destination 10.0.0.2:5678
+iptables -t nat -A PREROUTING -p tcp --dport 27020 -m statistic --mode nth --every 2 --packet 0 -j DNAT --to-destination 10.0.0.3:5678
+iptables -t nat -A PREROUTING -p tcp --dport 27020 -j DNAT --to-destination 10.0.0.4:5678
+# Additional postrouting for tcp
+iptables -A POSTROUTING -t nat -p tcp -d 10.0.0.3 --dport 5678  -j SNAT  --to-source 10.0.0.1
+iptables -A POSTROUTING -t nat -p tcp -d 10.0.0.4 --dport 5678  -j SNAT  --to-source 10.0.0.1
 ```

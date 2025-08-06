@@ -9,7 +9,8 @@ RUN apk add --no-cache \
     iproute2 \
     curl \
     wget \
-    bash
+    bash \
+    inetutils-telnet
 
 # Set a default command to keep the container running
 CMD ["sh"]
