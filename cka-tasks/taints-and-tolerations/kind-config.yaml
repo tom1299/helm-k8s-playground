@@ -4,7 +4,7 @@ nodes:
 - role: control-plane
   kubeadmConfigPatches:
   - |
-    kind: IniConfiguration
+    kind: InitConfiguration
     nodeRegistration:
       name: control-plane-node
 - role: worker
