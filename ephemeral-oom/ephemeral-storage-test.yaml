@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ephemeral-evict-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ephemeral-evict-test
+  template:
+    metadata:
+      labels:
+        app: ephemeral-evict-test
+    spec:
+      containers:
+        - name: writer
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /log
+              echo "starting writer loop"
+              while true; do
+                du -sh /log
+                dd if=/dev/zero of=/log/test.log bs=10000K count=1 oflag=append conv=notrunc
+                sleep 1
+              done
+          volumeMounts:
+            - name: log-volume
+              mountPath: /log
+          resources:
+            requests:
+              ephemeral-storage: "1Mi"
+              memory: "100Mi"
+            limits:
+              ephemeral-storage: "2Mi"
+              memory: "200Mi"
+        - name: volume-logger
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do
+                du -sh /log
+                sleep 1
+              done
+          volumeMounts:
+            - name: log-volume
+              mountPath: /log
+          resources:
+            requests:
+              ephemeral-storage: "1Mi"
+            limits:
+              ephemeral-storage: "2Mi"
+      volumes:
+        - name: log-volume
+          emptyDir:
+            medium: Memory
+            sizeLimit: "500Mi"
